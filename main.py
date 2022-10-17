@@ -10,10 +10,8 @@ import logging
 import signal
 import random
 
-from pyhap.accessory import Accessory, Bridge
+from pyhap.accessory import Accessory
 from pyhap.accessory_driver import AccessoryDriver
-import pyhap.loader as loader
-from pyhap import camera
 from pyhap.const import CATEGORY_SENSOR
 
 logging.basicConfig(level=logging.INFO, format="[%(module)s] %(message)s")
@@ -47,18 +45,18 @@ class TemperatureSensor(Accessory):
 
     @Accessory.run_at_interval(60)  # Run this method every 60 seconds
     # The `run` method can be `async` as well
-    def run(self):
+    async def run(self):
         """We override this method to implement what the accessory will do when it is
         started.
 
         We set the current temperature to a random number. The decorator runs this method
-        every 3 seconds.
+        every 60 seconds.
         """
         current_temp = random.randint(14, 26)
         self.temp_char.set_value(current_temp)
 
     # The `stop` method can be `async` as well
-    def stop(self):
+    async def stop(self):
         """We override this method to clean up any resources or perform final actions, as
         this is called by the AccessoryDriver when the Accessory is being stopped.
         """
@@ -71,7 +69,7 @@ def get_accessory(driver):
 
 
 # Start the accessory on port 51826
-driver = AccessoryDriver(port=51826)
+driver = AccessoryDriver(port=51826, persist_file="~/.bme680-homekit/persist")
 
 # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
 driver.add_accessory(accessory=get_accessory(driver))

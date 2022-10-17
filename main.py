@@ -45,7 +45,7 @@ class TemperatureSensor(Accessory):
         """
         print("Temperature changed to: ", value)
 
-    @Acessory.run_at_interval(60)  # Run this method every 60 seconds
+    @Accessory.run_at_interval(60)  # Run this method every 60 seconds
     # The `run` method can be `async` as well
     def run(self):
         """We override this method to implement what the accessory will do when it is

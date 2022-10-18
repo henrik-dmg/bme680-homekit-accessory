@@ -69,7 +69,7 @@ def get_accessory(driver):
 
 
 # Start the accessory on port 51826
-driver = AccessoryDriver(port=51826, persist_file="~/.bme680-homekit/persist")
+driver = AccessoryDriver(port=51826)
 
 # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
 driver.add_accessory(accessory=get_accessory(driver))

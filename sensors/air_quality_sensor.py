@@ -28,7 +28,7 @@ class AirQualitySensor(Accessory):
         We set the current temperature to a random number. The decorator runs this method
         every 60 seconds.
         """
-        current_aqi = random.randint(0, 100)
+        current_aqi = random.randint(0, 5)
         self.aqi_char.set_value(current_aqi)
 
     # The `stop` method can be `async` as well

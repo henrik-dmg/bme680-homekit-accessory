@@ -73,6 +73,7 @@ try:
         gas_baseline,
         hum_baseline))
 except KeyboardInterrupt:
+    logging.info("Skipping burn-in period for AQI measurements. Not recommended though")
     pass
 
 
@@ -84,7 +85,7 @@ def make_bridge(accessory_driver):
 
     humidity_sensor = HumiditySensor(accessory_driver, 'HumiditySensor')
     bridge.add_accessory(humidity_sensor)
-    
+
     aqi_sensor = AirQualitySensor(accessory_driver, "AirQualitySensor")
     bridge.add_accessory(aqi_sensor)
 

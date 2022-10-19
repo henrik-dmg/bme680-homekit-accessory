@@ -3,7 +3,7 @@ from pyhap.const import CATEGORY_SENSOR
 import random
 
 
-class TemperatureSensor(Accessory):
+class HumiditySensor(Accessory):
     """Implementation of a mock temperature sensor accessory."""
 
     category = CATEGORY_SENSOR  # This is for the icon in the iOS Home app.
@@ -16,8 +16,8 @@ class TemperatureSensor(Accessory):
         super().__init__(*args, **kwargs)
 
         # Add the services that this Accessory will support with add_preload_service here
-        temp_service = self.add_preload_service("TemperatureSensor")
-        self.temp_char = temp_service.get_characteristic("CurrentTemperature")
+        humidity_service = self.add_preload_service("HumiditySensor")
+        self.humidity_char = humidity_service.get_characteristic("CurrentRelativeHumidity")
 
     @Accessory.run_at_interval(60)  # Run this method every 60 seconds
     # The `run` method can be `async` as well
@@ -28,8 +28,8 @@ class TemperatureSensor(Accessory):
         We set the current temperature to a random number. The decorator runs this method
         every 60 seconds.
         """
-        current_temp = random.randint(14, 26)
-        self.temp_char.set_value(current_temp)
+        current_humidity = random.randint(0, 100)
+        self.humidity_char.set_value(current_humidity)
 
     # The `stop` method can be `async` as well
     async def stop(self):

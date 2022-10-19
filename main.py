@@ -13,6 +13,7 @@ import bme680
 from pyhap.accessory import Bridge
 from pyhap.accessory_driver import AccessoryDriver
 from temperature_sensor import TemperatureSensor
+from humidity_sensor import HumiditySensor
 
 logging.basicConfig(level=logging.INFO, format="[%(module)s] %(message)s")
 
@@ -26,9 +27,9 @@ def make_bridge(accessory_driver):
     """Call this method to get a Bridge instead of a standalone accessory."""
     bridge = Bridge(accessory_driver, 'RaspiBridge')
     temp_sensor = TemperatureSensor(accessory_driver, 'TempSensor')
-    # temp_sensor2 = TemperatureSensor(accessory_driver, 'Sensor 1')
+    humidity_sensor = HumiditySensor(accessory_driver, 'HumiditySensor')
     bridge.add_accessory(temp_sensor)
-    bridge.add_accessory(temp_sensor2)
+    bridge.add_accessory(humidity_sensor)
 
     return bridge
 

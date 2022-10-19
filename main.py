@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-"""An example of how to setup and start an Accessory.
-This is:
-1. Create the Accessory object you want.
-2. Add it to an AccessoryDriver, which will advertise it on the local network,
-    setup a server to answer client queries, etc.
-"""
 import logging
 import signal
 import bme680
@@ -80,14 +74,9 @@ except KeyboardInterrupt:
 def make_bridge(accessory_driver):
     bridge = Bridge(accessory_driver, 'RaspiBridge')
 
-    temp_sensor = TemperatureSensor(accessory_driver, 'TemperatureSensor')
-    bridge.add_accessory(temp_sensor)
-
-    humidity_sensor = HumiditySensor(accessory_driver, 'HumiditySensor')
-    bridge.add_accessory(humidity_sensor)
-
-    aqi_sensor = AirQualitySensor(accessory_driver, "AirQualitySensor")
-    bridge.add_accessory(aqi_sensor)
+    bridge.add_accessory(TemperatureSensor(accessory_driver, 'TemperatureSensor'))
+    bridge.add_accessory(HumiditySensor(accessory_driver, 'HumiditySensor'))
+    bridge.add_accessory(AirQualitySensor(accessory_driver, "AirQualitySensor"))
 
     return bridge
 

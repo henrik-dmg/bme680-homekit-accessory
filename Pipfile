@@ -4,9 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-adafruit-circuitpython-bme680 = "*"
-board = "*"
 hap-python = {extras = ["qrcode"], version = "*"}
+bme680 = "*"
 
 [dev-packages]
 

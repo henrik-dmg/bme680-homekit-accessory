@@ -7,9 +7,6 @@ class HumiditySensor(Accessory):
     category = CATEGORY_SENSOR  # This is for the icon in the iOS Home app.
 
     def __init__(self, *args, **kwargs):
-        """Here, we just store a reference to the current temperature characteristic and
-        add a method that will be executed every time its value changes.
-        """
         # If overriding this method, be sure to call the super's implementation first.
         super().__init__(*args, None)
 

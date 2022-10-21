@@ -40,10 +40,12 @@ class WrappedSensor:
         self.sensor = sensor
 
     def get_temperature(self) -> float:
-        return self.sensor.data.temperature
+        sensor_data = self.sensor.get_sensor_data()
+        return sensor_data.temperature
 
     def get_humidity(self) -> float:
-        return self.sensor.data.humidity
+        sensor_data = self.sensor.get_sensor_data()
+        return sensor_data.humidity
 
     def get_air_quality(self) -> int:
         if self.sensor.get_sensor_data() and self.sensor.data.heat_stable and self.did_complete_burnin:

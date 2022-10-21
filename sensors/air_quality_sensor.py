@@ -1,5 +1,6 @@
 from pyhap.accessory import Accessory
 from pyhap.const import CATEGORY_SENSOR
+import logging
 
 
 class AirQualitySensor(Accessory):
@@ -28,4 +29,4 @@ class AirQualitySensor(Accessory):
         is changed. Use setter_callbacks to react to user actions, e.g. setting the
         lights On could fire some GPIO code to turn on a LED (see pyhap/accessories/LightBulb.py).
         """
-        print('AQI changed to: ', value)
+        logging.info('AQI changed to: ', value)

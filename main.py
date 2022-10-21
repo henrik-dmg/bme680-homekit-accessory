@@ -76,7 +76,7 @@ def make_bridge(accessory_driver):
 
     bridge.add_accessory(TemperatureSensor(accessory_driver, 'TemperatureSensor'))
     bridge.add_accessory(HumiditySensor(accessory_driver, 'HumiditySensor'))
-    bridge.add_accessory(AirQualitySensor(accessory_driver, sensor, gas_baseline, "AirQualitySensor"))
+    bridge.add_accessory(AirQualitySensor(accessory_driver, "AirQualitySensor", sensor=sensor, gas_baseline=gas_baseline))
 
     return bridge
 

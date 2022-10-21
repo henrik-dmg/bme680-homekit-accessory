@@ -1,8 +1,9 @@
-import adafruit_bme680
-import time
 import logging
-import board
 import random
+import time
+
+import adafruit_bme680
+import board
 
 
 class WrappedSensor:
@@ -90,10 +91,6 @@ class WrappedSensor:
                 time.sleep(1)
 
             self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
-
-            # This sets the balance between humidity and gas reading in the
-            # calculation of air_quality_score (25:75, humidity:gas)
-            hum_weighting = 0.25
 
             print('Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n'.format(
                 self.gas_baseline,

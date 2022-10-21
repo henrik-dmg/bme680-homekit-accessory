@@ -9,7 +9,7 @@ class TemperatureSensor(Accessory):
 
     def __init__(self, *args, **kwargs):
         # If overriding this method, be sure to call the super's implementation first.
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, None)
 
         # Add the services that this Accessory will support with add_preload_service here
         temp_service = self.add_preload_service("TemperatureSensor")

@@ -11,7 +11,7 @@ class HumiditySensor(Accessory):
         add a method that will be executed every time its value changes.
         """
         # If overriding this method, be sure to call the super's implementation first.
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, None)
 
         # Add the services that this Accessory will support with add_preload_service here
         humidity_service = self.add_preload_service("HumiditySensor")

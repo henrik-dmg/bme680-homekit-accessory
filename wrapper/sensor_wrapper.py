@@ -16,6 +16,7 @@ class WrappedSensor:
         self.hum_weighting = 0.25
 
         self.gas_baseline = None
+        self.did_complete_burnin = False
 
         try:
             sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
@@ -45,7 +46,7 @@ class WrappedSensor:
         return self.sensor.data.humidity
 
     def get_air_quality(self) -> int:
-        if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
+        if self.sensor.get_sensor_data() and self.sensor.data.heat_stable and self.did_complete_burnin:
             gas = self.sensor.data.gas_resistance
             gas_offset = self.gas_baseline - gas
 
@@ -105,11 +106,13 @@ class WrappedSensor:
                     print('Gas: {0} Ohms'.format(gas))
                     time.sleep(1)
 
-            gas_baseline = sum(burn_in_data[-50:]) / 50.0
+            self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
 
             print('Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n'.format(
-                gas_baseline,
+                self.gas_baseline,
                 self.hum_baseline))
+
+            self.did_complete_burnin = True
         except KeyboardInterrupt:
             logging.info("Skipping burn-in period for AQI measurements. Not recommended though")
             pass

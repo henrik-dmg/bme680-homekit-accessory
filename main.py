@@ -19,9 +19,9 @@ sensor.burn_in_sensor()
 def make_bridge(accessory_driver):
     bridge = Bridge(accessory_driver, 'RaspiBridge')
 
-    bridge.add_accessory(TemperatureSensor(accessory_driver, 'TemperatureSensor', sensor=sensor))
-    bridge.add_accessory(HumiditySensor(accessory_driver, 'HumiditySensor', sensor=sensor))
-    bridge.add_accessory(AirQualitySensor(accessory_driver, "AirQualitySensor", sensor=sensor))
+    bridge.add_accessory(TemperatureSensor(accessory_driver, sensor, 'TemperatureSensor'))
+    bridge.add_accessory(HumiditySensor(accessory_driver, sensor, 'HumiditySensor'))
+    bridge.add_accessory(AirQualitySensor(accessory_driver, sensor, "AirQualitySensor"))
 
     return bridge
 

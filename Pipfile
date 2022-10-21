@@ -5,8 +5,7 @@ name = "pypi"
 
 [packages]
 hap-python = {extras = ["qrcode"], version = "*"}
-adafruit-circuitpython-bme680 = "*"
-board = "*"
+bme680 = "*"
 
 [dev-packages]
 

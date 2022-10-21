@@ -13,6 +13,7 @@ from wrapper.sensor_wrapper import WrappedSensor
 
 logging.basicConfig(level=logging.INFO, format="[%(module)s] %(message)s")
 sensor = WrappedSensor()
+sensor.burn_in_sensor()
 
 
 def make_bridge(accessory_driver):

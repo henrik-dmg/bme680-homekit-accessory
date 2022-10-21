@@ -41,10 +41,12 @@ class WrappedSensor:
 
     def get_temperature(self) -> float:
         self.sensor.get_sensor_data()
+        print('Temperature: {0:.2f} %RH'.format(self.sensor.date.temperature))
         return self.sensor.data.temperature
 
     def get_humidity(self) -> float:
         self.sensor.get_sensor_data()
+        print('Humidity: {0:.2f} %RH'.format(self.sensor.date.humidity))
         return self.sensor.data.humidity
 
     def get_air_quality(self) -> int:

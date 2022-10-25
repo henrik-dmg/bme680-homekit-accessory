@@ -41,12 +41,12 @@ class WrappedSensor:
 
     def get_temperature(self) -> float:
         self.sensor.get_sensor_data()
-        print('Temperature: {0:.2f} %RH'.format(self.sensor.date.temperature))
+        print('Temperature: {0:.2f} %RH'.format(self.sensor.data.temperature))
         return self.sensor.data.temperature
 
     def get_humidity(self) -> float:
         self.sensor.get_sensor_data()
-        print('Humidity: {0:.2f} %RH'.format(self.sensor.date.humidity))
+        print('Humidity: {0:.2f} %RH'.format(self.sensor.data.humidity))
         return self.sensor.data.humidity
 
     def get_air_quality(self) -> int:
@@ -85,6 +85,7 @@ class WrappedSensor:
                 air_quality_score))
             return random.randint(1, 5)
         else:
+            # Return unknown value
             return 0
 
     def burn_in_sensor(self):
@@ -118,5 +119,6 @@ class WrappedSensor:
 
             self.did_complete_burnin = True
         except KeyboardInterrupt:
-            logging.info("Skipping burn-in period for AQI measurements. Not recommended though")
+            logging.info(
+                "Skipping burn-in period for AQI measurements. Not recommended though")
             pass

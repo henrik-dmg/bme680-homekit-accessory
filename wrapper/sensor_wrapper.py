@@ -3,6 +3,7 @@ import random
 import time
 import bme680
 from threading import Thread
+import math
 
 
 class CustomThread(Thread):
@@ -102,10 +103,13 @@ class WrappedSensor:
                     gas, hum, air_quality_score
                 )
             )
-            mapped_aqi_score = air_quality_score / 20
-            return random.randint(1, 5)
+            return math.floor(air_quality_score / 20) + 1
         else:
-            print("Heat stable: {0}, sensor burn in complet: {1}".format(self.sensor.data.heat_stable, self.did_complete_burnin))
+            print(
+                "Heat stable: {0}, sensor burn in complet: {1}".format(
+                    self.sensor.data.heat_stable, self.did_complete_burnin
+                )
+            )
             # Return unknown value
             return 0
 

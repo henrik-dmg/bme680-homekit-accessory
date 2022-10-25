@@ -17,7 +17,6 @@ class AirQualitySensor(Accessory):
         # Keep reference of sensor
         self.sensor = kwargs.get("sensor")
 
-    @Accessory.run_at_interval(60)
+    @Accessory.run_at_interval(15)
     async def run(self):
         self.aqi_char.set_value(self.sensor.get_air_quality())
-

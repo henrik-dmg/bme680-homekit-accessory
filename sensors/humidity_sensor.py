@@ -16,6 +16,6 @@ class HumiditySensor(Accessory):
         # Keep reference of sensor
         self.sensor = kwargs.get("sensor")
 
-    @Accessory.run_at_interval(60)
+    @Accessory.run_at_interval(30)
     async def run(self):
         self.humidity_char.set_value(self.sensor.get_humidity())

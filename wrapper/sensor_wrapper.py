@@ -41,7 +41,7 @@ class WrappedSensor:
 
     def get_temperature(self) -> float:
         self.sensor.get_sensor_data()
-        print('Temperature: {0:.2f} %RH'.format(self.sensor.data.temperature))
+        print('Temperature: {0:.2f} C'.format(self.sensor.data.temperature))
         return self.sensor.data.temperature
 
     def get_humidity(self) -> float:
@@ -83,6 +83,7 @@ class WrappedSensor:
                 gas,
                 hum,
                 air_quality_score))
+            mapped_aqi_score = air_quality_score / 20
             return random.randint(1, 5)
         else:
             # Return unknown value

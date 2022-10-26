@@ -6,12 +6,11 @@ import time
 
 from pyhap.accessory import Bridge
 from pyhap.accessory_driver import AccessoryDriver
-from sensors.temperature_sensor import TemperatureSensor
-from sensors.humidity_sensor import HumiditySensor
-from sensors.air_quality_sensor import AirQualitySensor
-from wrapper.sensor_wrapper import WrappedSensor
+from wrapper.wrapped_accessory import WrappedAccessory
+from wrapper.wrapped_sensor import WrappedSensor
 
 logging.basicConfig(level=logging.INFO, format="[%(module)s] %(message)s")
+
 sensor = WrappedSensor()
 sensor.burn_in_sensor()
 
@@ -20,13 +19,7 @@ def make_bridge(accessory_driver):
     bridge = Bridge(accessory_driver, "RaspiBridge")
 
     bridge.add_accessory(
-        TemperatureSensor(accessory_driver, "TemperatureSensor", sensor=sensor)
-    )
-    bridge.add_accessory(
-        HumiditySensor(accessory_driver, "HumiditySensor", sensor=sensor)
-    )
-    bridge.add_accessory(
-        AirQualitySensor(accessory_driver, "AirQualitySensor", sensor=sensor)
+        WrappedAccessory(accessory_driver, "BME680Sensor", sensor=sensor)
     )
 
     return bridge

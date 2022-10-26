@@ -1,9 +1,8 @@
 import logging
-import random
 import time
-import bme680
 from threading import Thread
 import math
+import bme680
 
 
 class CustomThread(Thread):
@@ -17,6 +16,16 @@ class CustomThread(Thread):
         print("Starting " + self.name)
         self.workLoad()
         print("Exiting " + self.name)
+
+
+class SensorData:
+    """Structure for storing BME680 sensor data."""
+
+    def __init__(self, temperature, pressure, humidity, aqi_score):
+        self.temperature = temperature
+        self.pressure = pressure
+        self.humidity = humidity
+        self.aqi_score = aqi_score
 
 
 class WrappedSensor:
@@ -54,26 +63,22 @@ class WrappedSensor:
 
         self.sensor = sensor
 
-    def get_temperature(self) -> float:
+    def get_data(self) -> SensorData:
         self.sensor.get_sensor_data()
-        print("Temperature: {0:.2f} C".format(self.sensor.data.temperature))
-        return self.sensor.data.temperature
+        aqi_score = self.get_air_quality(self.sensor.data)
+        return SensorData(
+            temperature=self.sensor.data.temperature,
+            humidity=self.sensor.data.humidity,
+            pressure=self.sensor.data.pressure,
+            aqi_score=aqi_score,
+        )
 
-    def get_humidity(self) -> float:
-        self.sensor.get_sensor_data()
-        print("Humidity: {0:.2f} %RH".format(self.sensor.data.humidity))
-        return self.sensor.data.humidity
-
-    def get_air_quality(self) -> int:
-        if (
-            self.sensor.get_sensor_data()
-            and self.sensor.data.heat_stable
-            and self.did_complete_burnin
-        ):
-            gas = self.sensor.data.gas_resistance
+    def get_air_quality(self, data) -> int:
+        if data.heat_stable and self.did_complete_burnin:
+            gas = data.gas_resistance
             gas_offset = self.gas_baseline - gas
 
-            hum = self.sensor.data.humidity
+            hum = data.humidity
             hum_offset = hum - self.hum_baseline
 
             # Calculate hum_score as the distance from the hum_baseline.
@@ -97,17 +102,18 @@ class WrappedSensor:
 
             # Calculate air_quality_score.
             air_quality_score = hum_score + gas_score
+            mapped_aqi_score = (air_quality_score / 100) * 5
 
             print(
-                "Gas: {0:.2f} Ohms,humidity: {1:.2f} %RH,air quality: {2:.2f}".format(
-                    gas, hum, air_quality_score
+                "Gas: {0:.2f} Ohms, humidity: {1:.2f} %RH, air quality: {2:.2f} / {3}".format(
+                    gas, hum, air_quality_score, mapped_aqi_score
                 )
             )
-            return math.floor(air_quality_score / 20) + 1
+            return math.floor(mapped_aqi_score)
         else:
             print(
                 "Heat stable: {0}, sensor burn in complet: {1}".format(
-                    self.sensor.data.heat_stable, self.did_complete_burnin
+                    data.heat_stable, self.did_complete_burnin
                 )
             )
             # Return unknown value
@@ -137,7 +143,7 @@ class WrappedSensor:
                 gas = self.sensor.data.gas_resistance
                 burn_in_data.append(gas)
                 print("Gas: {0} Ohms".format(gas))
-                time.sleep(1)
+                time.sleep(5)
 
         self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
 

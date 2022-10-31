@@ -2,7 +2,6 @@
 
 import logging
 import signal
-import time
 
 from pyhap.accessory import Bridge
 from pyhap.accessory_driver import AccessoryDriver
@@ -26,7 +25,9 @@ def make_bridge(accessory_driver):
 
 
 # Start the accessory on port 51826
-driver = AccessoryDriver(port=51826)
+driver = AccessoryDriver(
+    port=51826, persist_file="~/bme680-homekit-accessory/accessory.state"
+)
 
 # Change `get_accessory` to `get_bridge` if you want to run a Bridge.
 driver.add_accessory(accessory=make_bridge(driver))

@@ -1,5 +1,12 @@
 # Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit
 
+## Inhaltsverzeichnis
+
+- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Projektidee und Kontext|Projektidee und Kontext]]
+- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Recherche|Recherche]]
+- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
+- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
+
 Name: Henrik Panhans
 Matrikel-Nummer: 573550
 
@@ -13,11 +20,13 @@ Matrikel-Nummer: 573550
 
 ## Projektidee und Kontext
 
-Ich habe seit circa zwei Jahren einen Raspberry Pi zuhause rumliegen, der nichts tut, außer einen [HomeBridge](http://homebridge.io)-Server zu hosten, sodass ich meine [Heizköper-Thermostate von AVM](https://avm.de/produkte/fritzdect/fritzdect-301/) in die Home App auf meinen Apple Geräten einbinden kann. Das funktioniert über [ein Plugin](https://github.com/SeydX/homebridge-fritz-platform), welches mit meiner Fritz!Box kommuniziert, welche widerum die Thermostate anfunkt.
+Ich habe seit circa zwei Jahren einen Raspberry Pi zuhause rumliegen, der nichts tut, außer einen [HomeBridge](http://homebridge.io)-Server zu hosten, sodass ich meine [Heizkörper-Thermostate von AVM](https://avm.de/produkte/fritzdect/fritzdect-301/) in die Home App auf meinen Apple Geräten einbinden kann. Das funktioniert über [ein Plugin](https://github.com/SeydX/homebridge-fritz-platform), welches mit meiner Fritz!Box kommuniziert, welche wiederum die Thermostate anfunkt.
 Die Thermostate haben jeweils einen eingebauten Temperatur-Sensor, da ich mir aber nie sicher war wie präzise diese sind, wollte ich schon seit Längerem eine Eigenlösung basteln. Außerdem wollte ich zusätzliche Daten, so wie Luftqualität und Luftfeuchtigkeit messen können.
 Die Aufgabenstellung an mich selbst war also:
 
 > Lies die Daten von einem Luftqualitätssensor aus, der am Raspberry Pi angeschlossen ist, verwerte diese potentiell und stelle diese so bereit, dass die Home-App sie als Sensor-Quelle anzeigen kann.
+
+---
 
 ## Recherche
 
@@ -29,9 +38,39 @@ Mir fehlte also nur noch eine Library um mit der Home-App zu kommunizieren. Auch
 
 > Due to lack of time I (@jlusiardi) will not put much time into this project in the foreseeable future.
 
-Erste Zeile aus der README.md Datei der homekit_python Repository auf Github
+\- Erste Zeile aus der README.md Datei der homekit_python Repository auf Github
 
-**Anmerkung:** Ab iOS 16.2 (Stand 1. November 2022 noch in Beta) unterstützt die Home-App auch Geräte, die über das kürzlich finalisierte [Matter-Protokoll](https://csa-iot.org/all-solutions/matter/) kommunizieren. Dieses soll Smart Home Geräte platformunabhängig und sicher untereinander kommunizieren lassen können. Um aber die Komplexität meines Projekts nicht unnötig ins Unermessliche steigen zu lassen, indem ich den Standard selbst implementiere, entschied ich mich nur eine reine HAP Integration zu bauen.
+**Anmerkung:** Ab iOS 16.2 (Stand 1. November 2022 noch in Beta) unterstützt die Home-App auch Geräte, die über das kürzlich Finalisierte [Matter-Protokoll](https://csa-iot.org/all-solutions/matter/) kommunizieren. Dieses soll Smart Home Geräte plattformunabhängig und sicher untereinander kommunizieren lassen können. Um aber die Komplexität meines Projekts nicht unnötig ins Unermessliche steigen zu lassen, indem ich den Standard selbst implementiere, entschied ich mich nur eine reine HAP Integration zu bauen.
+
+Mein Techstack war also der Folgende:
+
+- Python 3.10.7, installiert über `pyenv`
+- HAP-python für die Einbindung in die Home-App
+- Adafruit_CircuitPython_BME680 zum Auslesen der Sensordaten
+
+---
+
+## Einrichtung der Hardware
+
+Als ersten Schritt der Durchführungsphase musste ich natürlich die Hardware einrichten und konfigurieren. Ich benötigte Folgendes:
+
+- Bosch BME680 Sensor
+- Raspberry Pi (Modell ist an sich egal, einer ist ein 4B mit 4GB RAM-Speicher)
+- microSD-Karte zur Installation des Betriebsystems
+- Lötkolben
+- 4x Male-to-Female Jumper/Dupont Kabel (z.B. wie [hier auf BerryBase](https://www.berrybase.de/40pin-jumper/dupont-kabel-male-female-trennbar))
+- USB-C Netzkabel
+
+![[bme680_project_1.jpeg]]
+\- Bosch BME680 Sensor als Breakout-Board von BerryBase
+
+Zuerst lies ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
+Nach dem Löten und dem Anschließen der Jumper-Kabel sah das Ganze dann so aus:
+
+![[bme680_project_3.jpeg]]
+\- BME680 Sensor mit angelöteter Pin-Leiste und daran angeschlossenen Jumper-Kabeln.
+
+---
 
 ## Einrichtung der Entwicklungsumgebung
 
@@ -61,10 +100,6 @@ Erste Zeile aus der README.md Datei der homekit_python Repository auf Github
 - pyenv und pipenv
 - service creation mit pipenv
 - vorzeitiges iOS-16 Matter Upgrade führte dazu, dass keine Paarung mehr persistiert werden kann, da UUIDs nun case-sensitive behandelt werden (https://github.com/ikalchev/HAP-python/pull/424). Lösung: Fork benutzen
-
-## Test References
-
-[@bdracoFixPairingIOS2022]
 
 ## Quellen
 

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "630d15e75de3b7defdf8a3373f4d60c27a6a9ec150f90314a42015be0047e737"
+            "sha256": "cb938e468786c8d016ec82478c10a3ca1f6f2a8c1b68d20daab49e56e8b45f9f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -201,16 +201,13 @@
             "markers": "python_version >= '3.7'",
             "version": "==0.14.0"
         },
-        "hap-python": {
+        "ha-hap-python": {
+            "editable": true,
             "extras": [
                 "qrcode"
             ],
-            "hashes": [
-                "sha256:6b3371b02923e8fd9b9d2f240f9e92d641e72a13037cf6ee2b8e371c2dac2524",
-                "sha256:83d5c43f4bc42f82578d7099dd68052e9f73d33d5ab7f6b9a37ff89a58b17c58"
-            ],
-            "index": "pypi",
-            "version": "==4.5.0"
+            "git": "https://github.com/bdraco/ha-HAP-python.git",
+            "ref": "ced28118e4229d928f9f74a162d8b9f3e8348edf"
         },
         "ifaddr": {
             "hashes": [
@@ -330,11 +327,11 @@
         },
         "zeroconf": {
             "hashes": [
-                "sha256:0937deea8d4df905dcc5ddc387df6a12270737babbc7666e95631a3f2b147f51",
-                "sha256:629d2a0dd7a2b9af5bc5eb0c8402755e87a2d00f7015c72834fc0958ccda2835"
+                "sha256:701e4d697f89fe952aa9c13a512ed6bf472dcf4f0a6d275e71085604b3882295",
+                "sha256:d60eae9e9c99d1a168ce9ff9de7e7398c23754a0c2004ded230f8d529c5260a0"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==0.39.2"
+            "version": "==0.39.4"
         }
     },
     "develop": {

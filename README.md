@@ -116,22 +116,124 @@ GPIO26 (37) (38) GPIO20
 Eine bessere Visualisierung ist aber dieses Bild:
 
 ![GPIO-Pinout Diagram](https://www.laub-home.de/images/thumb/b/b2/GPIO-Pinout-Diagram-2.png/1200px-GPIO-Pinout-Diagram-2.png)
+\- Visualisierung der GPIO-Pin Belegung eines Raspberry Pi 4
 
 Laut den Anweisungen von [Laub-Home](https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor#Anschluss_des_Sensors_am_GPIO) sollte ich die Pins 1 (3v3 Strom), 3 (SDA), 5 (SCL) und 6 (Ground) benutzen. Dies stellte allerdings ein Problem dar, da ich an meinem Raspberry Pi einen kleinen Lüfter betreibe, der sich je nach Last zuschaltet um den Prozessor kühl zu halten. Dieser blockierte die vom Sensor benötigten Pins:
 
 ![[bme680_project_2.jpeg]]
+\- Raspberry Pi GPIO-Pinleiste, wobei Pin 1, 3, 5 und 6 markiert sind
+
+Es stellte sich heraus, dass der Raspberry Pi zwei verschiedene I2C-Interfaces hat, das Primäre wie erwähnt an Pin 3 und 5 und das Zweite an Pin 27 und 28. Also schloss ich den Sensor zunächst einmal an Pin 27 und 28 an, da diese Pins nicht vom Lüfter blockiert wurden.
+Außerdem musste ich erst noch das I2C-Interface softwareseitig aktivieren. Das geht mit dem Befehl:
+
+```bash
+$ raspi-config nonint do_i2c 0
+```
+
+Außerdem braucht es noch einige Packages:
+
+```bash
+$ apt install -y python3-smbus i2c-tools
+```
+
+Testen, dass alle Module korrekt geladen wurden:
+
+```bash
+$ lsmod | grep i2c_
+i2c_brcmstb            16384  0
+i2c_bcm2835            16384  2
+i2c_dev                20480  4
+```
+
+Nachdem nun softwareseitig alles bereit war, konnte ich den Sensor endlich anschließen. Dazu schaltete ich den Pi zuerst natürlich aus, und verband dann die Kabel mit den Pins 27, 28, 25 (Ground) und 17 (3v3 Strom). Nach dem Reboot, wollte ich verifizieren, dass der Sensor erkannt wird:
+
+```bash
+$ i2cdetect -y 1
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:                         -- -- -- -- -- -- -- --
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+70: -- -- -- -- -- -- -- --
+```
+
+Das war der erste große Rückschlag. Der Sensor wurde nicht erkannt, und ich wusste nicht wieso. Nach einigem Durchforsten des Webs, stoß ich auf [einen Foreneintrag](https://forum-raspberrypi.de/forum/thread/31667-i2c-an-pin27-pin28-des-gpio-steckers/?postID=259968#post259968), der genau mein Problem beschrieb. Anscheinend sind Pin 27 und 28 reserviert für EEPROMs (electrically erasable programmable read-only memory) und daher nicht wirklich für den _normalen_ I2C Betrieb gedacht.
+Also probierte ich den Sensor, wie gefordert, an Pin 1, 3, 5 und 7 anzuschließen, um zu testen, dass der Sensor an sich funktioniert und korrekt gelötet ist. Das bedeutete zwar, dass ich meine Lüfter nicht gleichzeitig betreiben konnte, das war allerdings verkraftbar, da ich bei BerryBase dann [einen anderen Lüfter](https://www.berrybase.de/argon-fan-hat-fuer-raspberry-pi) fand, der keine GPIO Pins blockiert.
+Nach dem Umstecken des Sensors, funktionierte dann alles wie gewollt:
+
+```bash
+$ i2cdetect -y 1
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:                         -- -- -- -- -- -- -- --
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+70: -- -- -- -- -- -- -- 77
+```
+
+Hardwareseitig war nun alles bereit, um mit der Implementation zu beginnen.
 
 ---
 
 ## Einrichtung der Entwicklungsumgebung
 
+Zunächst wollte ich Python und `pip` zur Installation von Python-Packages installieren. Wenn ich dem Guide von Laub-Home gefolgt wäre, hätte ich dies einfach durch `apt install python3-pip -y` tun können. Ich wollte aber gerne [pyenv](https://github.com/pyenv/pyenv) verwenden, da dies die Installation und Nutzung mehrerer Python-Version ermöglicht. Zur Installation unter Raspberry Pi OS, nutze ich den bereitgestellten Installer:
+
+```bash
+$ curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+```
+
+Nachdem ich die Anweisung zum Einrichten der benötigten Environment-Variablen befolgt hatte, musste ich noch ein paar Dependencies installieren:
+
+```bash
+$ sudo apt update
+$ sudo apt install make build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+```
+
+Nachdem ich rebootet habe, wollte ich Python 3.10.7 installieren:
+
+```bash
+$ pyenv install 3.10.7
+...
+ERROR: The Python ssl extension was not compiled. Missing the OpenSSL lib?
+...
+```
+
+Na toll. Die Python-Installation war im Nachhinein gesehen tatsächlich der Part, mit dem ich mich mit am Meisten rumgeärgert habe und am Meisten Zeit verschwendet habe. Zum Glück schien dieser Fehler häufig aufzutreten, weshalb es sogar [eine extra Sektion im pyenv Wiki](https://github.com/pyenv/pyenv/wiki/Common-build-problems#error-the-python-ssl-extension-was-not-compiled-missing-the-openssl-lib) gibt. Nach einigem rumprobieren, folgte ich dann [diesem Guide](https://help.dreamhost.com/hc/en-us/articles/360001435926-Installing-OpenSSL-locally-under-your-username) um OpenSSL unter meinem Benutzer zu installieren und dann pyenv manuell davon wissen zu lassen. Schlussendlich konnte ich Python mit dem folgenden Befehl installieren:
+
+```bash
+$ CPPFLAGS=-I$HOME/openssl/include LDFLAGS=-L$HOME/openssl/lib SSH=$HOME/openssl pyenv install -v 3.10.7
+```
+
+Dann konnte ich die globale Python-Version setzen und `pip` installieren:
+
+```bash
+$ pyenv global 3.10.7
+$ python --version
+Python 3.10.7
+$ python -m ensurepip --upgrade
+```
+
+Zum Verwalten von Dependencies wollte ich [pipenv](https://pipenv.pypa.io/en/latest/) verwenden, da dieses `Pipfile` und `Pipfile.lock` benutzt. Das erschien mir moderner und besser, [als Dependencies aus einer simplen .txt Datei auszulesen und zu installieren](https://stackoverflow.com/a/15593865/4553482). Außerdem kann ich mit `Pipfile` sicher sein, welche Versionen verwendet werden, was mir tatsächlich im Nachhinein zugute kam (dazu später mehr).
+
+```bash
+$ pip install pipenv
+```
+
+Dann konnte das tatsächliche Setup der Repository erfolgen:
+```bash
+$ mkdir ~/bme680-homekit-accessory
+$ cd ~/bme680-homekit-accessory
+$ pipenv install 
+```
+
 ## Installation
-
-### Raspberry Pi OS
-
-- flash with balena etcher
-- Lite version is enough
-- setup wifi and all
 
 ### Einrichtung des Raspberry Pi
 

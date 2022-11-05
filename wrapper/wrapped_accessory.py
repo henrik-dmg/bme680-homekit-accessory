@@ -1,7 +1,7 @@
 from pyhap.accessory import Accessory
 from pyhap.const import CATEGORY_SENSOR
 
-from wrapper.wrapped_sensor import SensorData, WrappedSensor
+from wrapper.wrapped_sensor import WrappedSensor
 
 
 class WrappedAccessory(Accessory):

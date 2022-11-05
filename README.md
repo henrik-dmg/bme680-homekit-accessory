@@ -6,6 +6,7 @@
 - [[semesters/22-wise/iot/bme680-homekit-accessory/README#Recherche|Recherche]]
 - [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
 - [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
+- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Implementation|Implementation]]
 
 Name: Henrik Panhans
 Matrikel-Nummer: 573550
@@ -46,7 +47,7 @@ Mein Techstack war also der Folgende:
 
 - Python 3.10.7, installiert über `pyenv`
 - HAP-python für die Einbindung in die Home-App
-- Adafruit_CircuitPython_BME680 zum Auslesen der Sensordaten
+- bme680-python zum Auslesen der Sensordaten
 
 ---
 
@@ -260,6 +261,79 @@ Alternatively, run a command inside the virtualenv with pipenv run.
 ```
 
 Damit war das Setup beinahe abgeschlossen, ich musste nämlich noch einen Weg finden mit funktionierendem Auto-Complete programmieren zu können, denn die bme680 Library ist nicht macOS kompatibel, wodurch ich sie nicht lokal installieren konnte. Hierfür benutzte ich Visual Studio Code in Verbindung mit der [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) Extension, welche es mir ermöglicht, mich direkt in VS Code mit meinem Pi zu verbinden, und dessen Virtual Environments und dergleichen zu benutzen. Das bedeutet zwar auch, dass das Syntax Highlighting und Auto-Complete etwas verzögert ist (da die Infos immer erst zwischen meinem Mac und dem Pi hin- und hergeschickt werden müssen), aber das war die für mich beste Lösung. Zwischenzeitlich dachte ich, es macht Sinn Ubuntu auf meinem Mac als Dual-Boot zu installieren, da ich dann die bme680 Library lokal hätte installieren können, aber dann hätte ich nicht gleichzeitig testen können.
+
+---
+
+## Implementation
+
+Nun war endlich alles bereit um tatsächlich zu programmieren. Bevor ich wirklich anfing selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, dass auch alles funktioniert. Nachdem diese Skripte ohne Probleme liefen, erstellte ich das Skript, was als Eingangspunk für die Ausführung dienen sollte:
+
+```bash
+$ touch main.py
+```
+
+und fügte die folgenden Zeilen hinzu:
+
+```python
+#!/usr/bin/env python3
+
+import logging
+import signal
+
+from pyhap.accessory import Bridge
+from pyhap.accessory_driver import AccessoryDriver
+
+
+def make_bridge(accessory_driver):
+  bridge = Bridge(accessory_driver, "RaspiBridge")
+  return bridge
+
+
+# Start the accessory on port 51826
+driver = AccessoryDriver(
+  port=51826, persist_file="~/bme680-homekit-accessory/accessory.state"
+)
+# Hide sensor behind a bridge. This makes it easier to add more accessories later
+driver.add_accessory(accessory=make_bridge(driver))
+
+# We want SIGTERM (terminate) to be handled by the driver itself,
+# so that it can gracefully stop the accessory, server and advertising.
+signal.signal(signal.SIGTERM, driver.signal_handler)
+
+# Start it!
+driver.start()
+```
+
+Dieser Code ist größtenteils identisch mit dem [Beispiel-Code von HAP-python](https://github.com/ikalchev/HAP-python/blob/dev/main.py). Beim Überlegen, wie ich meinen Code strukturieren wollte, entschied ich mich dafür zwei Klassen zu erstellen:
+
+1. Eine Wrapper-Klasse für den Sensor, die dessen Daten ausliest und aufbereiten kann. Dies war außerdem sinnvoll, da ich mir noch einen Algorithmus zur Berechnung eines _Luftqualitätsscores_ ausdenken musste, da der BME680 einem nur die rohen Daten liefert (zumindest in Verbindung mit der von mir benutzen Library) und ich diesen nicht einfach irgendwo in die `main.py` Datei schmeißen wollte
+2. Eine Unterklasse von `Accessory` aus der `HAP-python` Library, die die drei erwünschten Metriken (Temperatur, Luftfeuchtigkeit, Luftqualität) in einem Sensor zusammenfasst.
+
+Anfangs war ich der Auffassung, dass ich pro Metrik eine einzelne Unterklasse von `Accessory` brauche, die sich dann jeweils nur um ihre eigenen Daten kümmert. Das Problem hiermit war Zeitsynchronisation - ein Klassiker. Da alle Unterklassen/Accessories fast gleichzeitig jeweils Daten vom Sensor angefordert haben, hat dieser mehrere Male hintereinander gemessen, was nicht nur die Ergebnisse verfälscht hat, da sich der Sensor aufheizt, sondern dies auch einfach unnötige Arbeit ist.
+
+Ein Sensor-Accessory hat die folgenden Grundstruktur:
+
+```python
+from pyhap.accessory import Accessory
+from pyhap.const import CATEGORY_SENSOR
+
+class WrappedAccessory(Accessory):
+
+  category = CATEGORY_SENSOR # This is for the icon in the iOS Home app.
+
+  def __init__(self, driver, display_name):
+    super().__init__(driver, display_name)
+    # TODO: Add the services that this Accessory will support here
+
+  @Accessory.run_at_interval(15)
+  def run(self):
+    # TODO: Update data here
+```
+
+Zur Erläuterung:
+
+- `category = CATEGORY_SENSOR` signalisiert der Home-App, dass es sich bei dem Accessory um einen Sensor handelt
+- mit `@Accessory.run_at_interval(15)` bestimmen wir, dass alle 15 Sekunden der Wert, der in der Home-App angezeigt wird aktualisiert werden soll. In meinem Fall bedeutete das, dass ich alle 15 Sekunden die Daten des Sensors auslese.
 
 ## Installation
 

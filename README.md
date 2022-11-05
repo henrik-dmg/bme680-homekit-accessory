@@ -227,11 +227,39 @@ $ pip install pipenv
 ```
 
 Dann konnte das tatsächliche Setup der Repository erfolgen:
+
 ```bash
 $ mkdir ~/bme680-homekit-accessory
 $ cd ~/bme680-homekit-accessory
-$ pipenv install 
 ```
+
+HAP-python erfordert noch ein paar extra Dependencies:
+
+```bash
+$ sudo apt-get install libavahi-compat-libdnssd-dev
+```
+
+Schlussendlich konnte ich die beiden benötigten Python-Libraries wie folgt installieren:
+
+```
+$ pipenv install bme680 HAP-python[QRCode]
+Creating a virtualenv for this project...
+Pipfile: /home/pi/bme680-homekit-accessory/Pipfile
+Using /home/pi/.pyenv/versions/3.10.7/bin/python3 (3.10.7) to create virtualenv...
+⠧ Creating virtual environment...created virtual environment CPython3.10.7.final.0-64 in 992ms
+  creator Venv(dest=/home/pi/.local/share/virtualenvs/bme680-homekit-accessory-4T_QXEXt, clear=False, no_vcs_ignore=False, global=False, describe=CPython3Posix)
+  seeder FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/home/pi/.local/share/virtualenv)
+    added seed packages: pip==22.2.2, setuptools==65.4.1, wheel==0.37.1
+  activators BashActivator,CShellActivator,FishActivator,NushellActivator,PowerShellActivator,PythonActivator
+
+✔ Successfully created virtual environment!
+Virtualenv location: /home/pi/.local/share/virtualenvs/bme680-homekit-accessory-4T_QXEXt
+Installing dependencies from Pipfile.lock (b45f9f)...
+To activate this project's virtualenv, run pipenv shell.
+Alternatively, run a command inside the virtualenv with pipenv run.
+```
+
+Damit war das Setup beinahe abgeschlossen, ich musste nämlich noch einen Weg finden mit funktionierendem Auto-Complete programmieren zu können, denn die bme680 Library ist nicht macOS kompatibel, wodurch ich sie nicht lokal installieren konnte. Hierfür benutzte ich Visual Studio Code in Verbindung mit der [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) Extension, welche es mir ermöglicht, mich direkt in VS Code mit meinem Pi zu verbinden, und dessen Virtual Environments und dergleichen zu benutzen. Das bedeutet zwar auch, dass das Syntax Highlighting und Auto-Complete etwas verzögert ist (da die Infos immer erst zwischen meinem Mac und dem Pi hin- und hergeschickt werden müssen), aber das war die für mich beste Lösung. Zwischenzeitlich dachte ich, es macht Sinn Ubuntu auf meinem Mac als Dual-Boot zu installieren, da ich dann die bme680 Library lokal hätte installieren können, aber dann hätte ich nicht gleichzeitig testen können.
 
 ## Installation
 

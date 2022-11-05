@@ -64,11 +64,62 @@ Als ersten Schritt der Durchführungsphase musste ich natürlich die Hardware ei
 ![[bme680_project_1.jpeg]]
 \- Bosch BME680 Sensor als Breakout-Board von BerryBase
 
-Zuerst lies ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
+Zuerst ließ ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
 Nach dem Löten und dem Anschließen der Jumper-Kabel sah das Ganze dann so aus:
 
 ![[bme680_project_3.jpeg]]
 \- BME680 Sensor mit angelöteter Pin-Leiste und daran angeschlossenen Jumper-Kabeln.
+
+{{TODO: Add comment about which Pins to use}}
+
+Nun musste ich also theoretisch nur noch die Kabel an die richtigen GPIO-Pins (General Purpose In/Out) anschließen und das I2C-Interface des Raspberry Pi aktivieren und schon sollte der Sensor erkannt werden. Hierzu musste ich erst einmal Raspberry Pi OS installieren. Hierzu nutzte ich das Tool [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Ich wählte Raspberry Pi OS Lite 64-Bit, hierbei bedeutet Lite, dass das Betriebsystem keine grafische Oberfläche wie man sie als normaler Endnutzer von macOS oder Windows kennt, sondern nur eine Kommando-Zeile. Da ich mit dem Pi aber sowieso eigentlich nur über SSH arbeite, ist das absolute ausreichend. Praktischerweise kann man dem Raspberry Pi Imager direkt auch WLAN, SSH und das Login des Pi konfigurieren, sodass beim ersten Bootvorgang direkt schon alles bereit ist. Nachdem das OS erfolgreich auf der angeschlossenen microSD-Karte installiert war, steckte ich diese in den Raspberry Pi und schaltete die Stromversorgung an. Kurzes Warten und ein Blick auf das Interface meiner FritzBox bestätigten, dass der Pi sich erfolgreich im Netzwerk eingewählt hatte. Also konnte ich mich nun mit SSH verbinden:
+
+```bash
+$ ssh pi@raspberry-henrik
+Linux raspberry-henrik 5.15.61-v8+ #1579 SMP PREEMPT Fri Aug 26 11:16:44 BST 2022 aarch64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Mon Oct 31 23:39:07 2022 from 2a02:8109:a380:3748:cc44:6d6e:c58a:28d8
+pi@raspberry-henrik:~ $
+```
+
+Mit dem `pinout`-Befehl ließ ich mir anzeigen, wie die genaue GPIO-Pin Belegung meines Raspberry Pi aussieht:
+
+```
+   3V3  (1) (2)  5V
+ GPIO2  (3) (4)  5V
+ GPIO3  (5) (6)  GND
+ GPIO4  (7) (8)  GPIO14
+   GND  (9) (10) GPIO15
+GPIO17 (11) (12) GPIO18
+GPIO27 (13) (14) GND
+GPIO22 (15) (16) GPIO23
+   3V3 (17) (18) GPIO24
+GPIO10 (19) (20) GND
+ GPIO9 (21) (22) GPIO25
+GPIO11 (23) (24) GPIO8
+   GND (25) (26) GPIO7
+ GPIO0 (27) (28) GPIO1
+ GPIO5 (29) (30) GND
+ GPIO6 (31) (32) GPIO12
+GPIO13 (33) (34) GND
+GPIO19 (35) (36) GPIO16
+GPIO26 (37) (38) GPIO20
+   GND (39) (40) GPIO21
+```
+
+Eine bessere Visualisierung ist aber dieses Bild:
+
+![GPIO-Pinout Diagram](https://www.laub-home.de/images/thumb/b/b2/GPIO-Pinout-Diagram-2.png/1200px-GPIO-Pinout-Diagram-2.png)
+
+Laut den Anweisungen von [Laub-Home](https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor#Anschluss_des_Sensors_am_GPIO) sollte ich die Pins 1 (3v3 Strom), 3 (SDA), 5 (SCL) und 6 (Ground) benutzen. Dies stellte allerdings ein Problem dar, da ich an meinem Raspberry Pi einen kleinen Lüfter betreibe, der sich je nach Last zuschaltet um den Prozessor kühl zu halten. Dieser blockierte die vom Sensor benötigten Pins:
+
+![[bme680_project_2.jpeg]]
 
 ---
 
@@ -103,6 +154,7 @@ Nach dem Löten und dem Anschließen der Jumper-Kabel sah das Ganze dann so aus:
 
 ## Quellen
 
+Bilder die nicht explizit gekennzeichnet sind, wurden von mir selbst aufgenommen
 https://www.robpeck.com/2017/11/using-pipenv-with-systemd/
 https://github.com/dnutiu/bme680-homekit/blob/master/sensors/main.py
 https://github.com/ikalchev/HAP-python

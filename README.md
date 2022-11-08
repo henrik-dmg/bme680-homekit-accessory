@@ -201,12 +201,12 @@ Nachdem ich rebootet habe, wollte ich Python 3.10.7 installieren:
 
 ```bash
 $ pyenv install 3.10.7
-...
+# ...
 ERROR: The Python ssl extension was not compiled. Missing the OpenSSL lib?
-...
+# ...
 ```
 
-Na toll. Die Python-Installation war im Nachhinein gesehen tatsächlich der Part, mit dem ich mich mit am Meisten rumgeärgert habe und am Meisten Zeit verschwendet habe. Zum Glück schien dieser Fehler häufig aufzutreten, weshalb es sogar [eine extra Sektion im pyenv Wiki](https://github.com/pyenv/pyenv/wiki/Common-build-problems#error-the-python-ssl-extension-was-not-compiled-missing-the-openssl-lib) gibt. Nach einigem rumprobieren, folgte ich dann [diesem Guide](https://help.dreamhost.com/hc/en-us/articles/360001435926-Installing-OpenSSL-locally-under-your-username) um OpenSSL unter meinem Benutzer zu installieren und dann pyenv manuell davon wissen zu lassen. Schlussendlich konnte ich Python mit dem folgenden Befehl installieren:
+Na toll. Die Python-Installation war im Nachhinein gesehen tatsächlich der Part, mit dem ich mich mit am Meisten rumgeärgert habe und am Meisten Zeit verschwendet habe. Zum Glück schien dieser Fehler häufig aufzutreten, weshalb es sogar [eine extra Sektion im pyenv Wiki](https://github.com/pyenv/pyenv/wiki/Common-build-problems#error-the-python-ssl-extension-was-not-compiled-missing-the-openssl-lib) gibt. Nach einigem rumprobieren, folgte ich dann [diesem Guide](https://help.dreamhost.com/hc/en-us/articles/360001435926-Installing-OpenSSL-locally-under-your-username) um OpenSSL unter meinem Benutzer zu selbst zu compilen und installeren und dann pyenv manuell davon wissen zu lassen. Schlussendlich konnte ich Python mit dem folgenden Befehl installieren:
 
 ```bash
 $ CPPFLAGS=-I$HOME/openssl/include LDFLAGS=-L$HOME/openssl/lib SSH=$HOME/openssl pyenv install -v 3.10.7
@@ -304,12 +304,12 @@ signal.signal(signal.SIGTERM, driver.signal_handler)
 driver.start()
 ```
 
-Dieser Code ist größtenteils identisch mit dem [Beispiel-Code von HAP-python](https://github.com/ikalchev/HAP-python/blob/dev/main.py). Beim Überlegen, wie ich meinen Code strukturieren wollte, entschied ich mich dafür zwei Klassen zu erstellen:
+Dieser Starter-Code ist größtenteils der [Beispiel-Code von HAP-python](https://github.com/ikalchev/HAP-python/blob/dev/main.py). Beim Überlegen, wie ich meinen Code strukturieren wollte, entschied ich mich dafür zwei Klassen zu erstellen:
 
 1. Eine Wrapper-Klasse für den Sensor, die dessen Daten ausliest und aufbereiten kann. Dies war außerdem sinnvoll, da ich mir noch einen Algorithmus zur Berechnung eines _Luftqualitätsscores_ ausdenken musste, da der BME680 einem nur die rohen Daten liefert (zumindest in Verbindung mit der von mir benutzen Library) und ich diesen nicht einfach irgendwo in die `main.py` Datei schmeißen wollte
 2. Eine Unterklasse von `Accessory` aus der `HAP-python` Library, die die drei erwünschten Metriken (Temperatur, Luftfeuchtigkeit, Luftqualität) in einem Sensor zusammenfasst.
 
-Anfangs war ich der Auffassung, dass ich pro Metrik eine einzelne Unterklasse von `Accessory` brauche, die sich dann jeweils nur um ihre eigenen Daten kümmert. Das Problem hiermit war Zeitsynchronisation - ein Klassiker. Da alle Unterklassen/Accessories fast gleichzeitig jeweils Daten vom Sensor angefordert haben, hat dieser mehrere Male hintereinander gemessen, was nicht nur die Ergebnisse verfälscht hat, da sich der Sensor aufheizt, sondern dies auch einfach unnötige Arbeit ist.
+Anfangs war ich der Auffassung, dass ich pro Metrik eine einzelne Unterklasse von `Accessory` brauche, die sich dann jeweils nur um die für sie relevanten Daten kümmert. Das Problem hiermit war Zeitsynchronisation - ein Klassiker. Da alle Unterklassen/Accessories fast gleichzeitig jeweils Daten vom Sensor angefordert haben, hat dieser mehrere Male hintereinander gemessen, was nicht nur die Ergebnisse verfälscht hat, da sich der Sensor aufheizt, sondern dies auch einfach unnötige Arbeit ist. Außerdem hätte das dazu geführt, dass drei separate Sensoren in der Home-App angezeigt werden, was natürlich auch semantisch Quatsch ist, da ja alle Daten nur von einem einzigen Sensor kommen.
 
 Ein Sensor-Accessory hat die folgenden Grundstruktur:
 
@@ -334,6 +334,88 @@ Zur Erläuterung:
 
 - `category = CATEGORY_SENSOR` signalisiert der Home-App, dass es sich bei dem Accessory um einen Sensor handelt
 - mit `@Accessory.run_at_interval(15)` bestimmen wir, dass alle 15 Sekunden der Wert, der in der Home-App angezeigt wird aktualisiert werden soll. In meinem Fall bedeutete das, dass ich alle 15 Sekunden die Daten des Sensors auslese.
+
+Der nächste Schritt war die gewünschten _Services_ zu registrieren. Ein Service im Kontext eines Accessories ist eine Fähigkeit, die das Gerät bietet und diese der Home-App zur Anzeige anzubieten. Also habe ich den `def __init__` meines `WrappedAccessory` um folgende Zeilen erweitert:
+
+```python
+# ...
+
+humidity_service = self.add_preload_service("HumiditySensor")
+self.humidity_char = humidity_service.get_characteristic("CurrentRelativeHumidity")
+
+temp_service = self.add_preload_service("TemperatureSensor")
+self.temp_char = temp_service.get_characteristic("CurrentTemperature")
+
+aqi_service = self.add_preload_service("AirQualitySensor")
+self.aqi_char = aqi_service.get_characteristic("AirQuality")
+```
+
+Die Zeilen, in denen ein `xxx_service` erstellt werden, definieren jeweils die **Art des Sensors**, z.B. `HumiditySensor` teilt HomeKit mit, dass es sich um einen Feuchtigkeitssensor handelt.
+Die Zeilen, in denen `xxx_service.get_characteristic("someCharacteristic")` steht, sagen HomeKit, welche **Art von Daten** in zum Beispiel `self.humidity_char` gespeichert werden.
+Die Liste an möglichen Kombinationen von Sensor-Art und Daten-Art, konnte ich der [`services.json`](https://github.com/ikalchev/HAP-python/blob/dae7650f9f95a141b4d827e057cd2cfe6127c692/pyhap/resources/services.json) Datei aus der HAP-python Repository entnehmen.
+
+Danach habe ich erstmal fake Daten verwendet, um zu testen ob alles funktioniert. Die Daten werden in der `def run(self)` Methode aktualisiert.
+
+```python
+@Accessory.run_at_interval(15)
+def run(self):
+	self.humidity_char.set_value(random.randint(0, 100))
+	self.temp_char.set_value(random.randint(-10, 50))
+	self.aqi_char.set_value(random.randint(1, 5)) # 0 is for unknown quality
+```
+
+Anfangs war ich der Auffassung, dass Luftqualität ebenfalls in Prozent angegeben, so wie Luftfeuchtigkeit. Hier bekam ich aber eine Exception ausgespuckt, dass der Wert ungültig sei. Auch hier stieß ich schließlich auf eine [`characteristics.json`](https://github.com/ikalchev/HAP-python/blob/dae7650f9f95a141b4d827e057cd2cfe6127c692/pyhap/resources/characteristics.json) Datei, welche die gültigen Werte für die jeweiligen Charakteristiken definiert.
+
+Dann habe ich noch die `def make_bride(accessory_driver)` Methode in `main.py` angepasst um den Sensor als Accessory zu verwenden:
+
+```python
+from wrapper.wrapped_accessory import WrappedAccessory
+
+sensor = WrappedSensor()
+
+def make_bridge(accessory_driver):
+  bridge = Bridge(accessory_driver, "RaspiBridge")
+  bridge.add_accessory(WrappedAccessory(accessory_driver, "BME680Sensor"))
+  return bridge
+```
+
+Wenn wir nun das Skript mit `pipenv run python main.py` (wir müssen `pipenv run` als Präfix vor den eigentlichen Befehl setzen, um sicher zu gehen, dass wir das virtuelle Environment verwenden und damit alle Dependencies zur Verfügung haben) sehen wir Folgendes:
+
+```bash
+$ pipenv run python main.py
+[accessory_driver] Storing Accessory state in `/home/pi/bme680-homekit-accessory/accessory.state`
+[accessory_driver] Starting the event loop
+[accessory_driver] Starting accessory RaspiBridge on address 192.168.178.33, port 51826.
+Setup payload: X-HM://0024E886ZTU18
+Scan this code with your HomeKit app on your iOS device:
+
+# QR Code ist displayed here
+
+Or enter this code in your HomeKit app on your iOS device: 559-25-115
+```
+
+Eigentlich wird im Terminal dann ein QR-Code angezeigt, da dieser aber nur eingefärbte Leerzeichen sind, konnte ich diesen nicht im Codeblock beinhalten. Wenn man diesen QR-Code scannt, öffnet sich die Home-App und fragt einen, ob man die "RaspiBridge" hinzufügen möchte. Dann muss man sich durch ein kurzes Setup klicken und den Sensor einem Raum zuweisen. Nach dem Setup sieht das Ganze dann so aus:
+
+![[bem680_project_home_app_screenshot.png]]
+An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-python für Persistenz verwendet. Sobald `start()` auf einem `AccessoryDriver` aufgerufen wird, liest dieser (falls vorhanden) die `accessory.state` Datei aus oder erstellt diese, falls sie nicht existiert. Diese Datei ist eine relativ simple JSON-Datei, in der einige Metadaten gespeichert werden, damit man nicht bei jedem Start des `AccessoryDriver` den Pairing-Prozess neu durchführen muss. Die von meinem Pi gespeicherte Datei sieht zum Beispiel so aus:
+
+```json
+{
+  "mac": "F7:6A:13:B6:F2:80",
+  "config_version": 2,
+  "paired_clients": {
+    "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": "e4ae920fbdb29002e10761cdeb7275e1a7d1463da78c6b02559d6eeea2543567"
+  },
+  "client_properties": {
+    "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": {
+      "permissions": 1
+    }
+  },
+  "accessories_hash": "e67c6828ffd3aa8254fa4ad932a6872514b20d62977b332dc5761d111ed123b3e7250ed32161fc5ef5bec192d7dc44cbe725b6806ac9eddee86df246f2589644",
+  "private_key": "you_wish_you_knew_my_private_key",
+  "public_key": "aa2659047b9df62e32f95210ae5d2f3ad4246a5c3bd4b57d9178e7c4da1f1f79"
+}
+```
 
 ## Installation
 

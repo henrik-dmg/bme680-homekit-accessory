@@ -266,13 +266,15 @@ Damit war das Setup beinahe abgeschlossen, ich musste nämlich noch einen Weg fi
 
 ## Implementation
 
-Nun war endlich alles bereit um tatsächlich zu programmieren. Bevor ich wirklich anfing selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, dass auch alles funktioniert. Nachdem diese Skripte ohne Probleme liefen, erstellte ich das Skript, was als Eingangspunk für die Ausführung dienen sollte:
+### HomeKit Bridge Server
+
+Nun war endlich alles bereit um tatsächlich zu programmieren. Als Erstes brauchte ich ein Skript, was als Eingangspunk für die Ausführung dienen sollte:
 
 ```bash
 $ touch main.py
 ```
 
-und fügte die folgenden Zeilen hinzu:
+Hier fügte ich die folgenden Zeilen ein:
 
 ```python
 #!/usr/bin/env python3
@@ -371,8 +373,6 @@ Dann habe ich noch die `def make_bride(accessory_driver)` Methode in `main.py` a
 ```python
 from wrapper.wrapped_accessory import WrappedAccessory
 
-sensor = WrappedSensor()
-
 def make_bridge(accessory_driver):
   bridge = Bridge(accessory_driver, "RaspiBridge")
   bridge.add_accessory(WrappedAccessory(accessory_driver, "BME680Sensor"))
@@ -389,12 +389,13 @@ $ pipenv run python main.py
 Setup payload: X-HM://0024E886ZTU18
 Scan this code with your HomeKit app on your iOS device:
 
-# QR Code ist displayed here
+# Eigentlich wird an dieser Stelle ein QR-Code angezeigt, da dieser aber nur eingefärbte Leerzeichen sind,
+# konnte ich diesen nicht im Codeblock beinhalten
 
 Or enter this code in your HomeKit app on your iOS device: 559-25-115
 ```
 
-Eigentlich wird im Terminal dann ein QR-Code angezeigt, da dieser aber nur eingefärbte Leerzeichen sind, konnte ich diesen nicht im Codeblock beinhalten. Wenn man diesen QR-Code scannt, öffnet sich die Home-App und fragt einen, ob man die "RaspiBridge" hinzufügen möchte. Dann muss man sich durch ein kurzes Setup klicken und den Sensor einem Raum zuweisen. Nach dem Setup sieht das Ganze dann so aus:
+Wenn man den erwähnten QR-Code scannt, öffnet sich die Home-App und fragt einen, ob man die "RaspiBridge" hinzufügen möchte. Dann muss man sich durch ein kurzes Setup klicken und den Sensor einem Raum zuweisen. Nach dem Setup sieht das Ganze dann so aus:
 
 ![[bem680_project_home_app_screenshot.png]]
 An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-python für Persistenz verwendet. Sobald `start()` auf einem `AccessoryDriver` aufgerufen wird, liest dieser (falls vorhanden) die `accessory.state` Datei aus oder erstellt diese, falls sie nicht existiert. Diese Datei ist eine relativ simple JSON-Datei, in der einige Metadaten gespeichert werden, damit man nicht bei jedem Start des `AccessoryDriver` den Pairing-Prozess neu durchführen muss. Die von meinem Pi gespeicherte Datei sieht zum Beispiel so aus:
@@ -417,26 +418,67 @@ An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-p
 }
 ```
 
-## Installation
+Zu Beginn des Projekts funktionierte alles ganz ohne Probleme (zugegebenermaßen etwas zu meiner Überraschung). Dann kam allerdings die iOS 16.2 Beta heraus, und ich las in einem Artikel, dass dieses Update die Home-App Architektur so überarbeitet, dass Geräte mit Matter-Unterstützung hinzugefügt werden können. Das fand ich natürlich spannend und installierte dieses Update auf meinem iPhone. Ich musste außerdem meinen Apple TV updaten, der im lokalen Netzwerk als Hub funktioniert, sodass ich meine Geräte auch von unterwegs steuern kann. Nach dem Update ging plötzlich nichts mehr. Egal was ich versuchte (sprich egal welchen Pfad ich für die `accessory.state` Datei manuell angab), nach jedem Neustart des `AccessoryDriver` musste ich die Bridge neu hinzufügen. Das ist natürlich nicht wünschenswert, da man sonst nach jedem Neustart des Pi den gesamten Pairing-Prozess wiederholen muss.
+Ich war der Verzweiflung sehr nahe. Ich kam auch nicht auf die Idee, dass es vielleicht am Client (also an meinem iPhone) liegen könnte und nicht am Server (Pi). Nach Durchforsten der HAP-python Library nach offenen Issues oder Pull Requests (nachfolgend PR), fand ich eine PR mit folgendem Titel:
 
-### Einrichtung des Raspberry Pi
+> Fix pairing with iOS 16 #424
+> https://github.com/ikalchev/HAP-python/pull/424
 
-- `sudo apt install git` if not already installed
-- go to dir where repo should live
-- `git clone https://github.com/henrik-dmg/bme680-homekit-accessory`
-- `cd bme680-homekit-accessory`
-- enable i2c Interace with `raspi-config nonint do_i2c 0`
-- `sudo apt install -y python3-smbus i2c-tools`
-- `lsmod | grep i2c_` sollte module ausgeben
-- `i2cdetect -y 1` sollte Sensor matrix bei 77 anzeigen
-- `sudo apt install python3-pip -y`
-- `pip3 install adafruit-circuitpython-bme680`
+Das klang viel versprechend. Nach Lesen des ersten Satz war mir bewusst, wo mein Fehler lag:
 
-## Aufgetretene Probleme
+> UUIDs must be upper case with iOS 16 or they will get unpaired by the iOS device because it no longer compares them case insensitive.
 
-- pyenv und pipenv
-- service creation mit pipenv
-- vorzeitiges iOS-16 Matter Upgrade führte dazu, dass keine Paarung mehr persistiert werden kann, da UUIDs nun case-sensitive behandelt werden (https://github.com/ikalchev/HAP-python/pull/424). Lösung: Fork benutzen
+\- PR Beschreibung von @bdraco
+
+Unglücklicherweise wurde diese PR bis heute (Stand 8. November 2022) nicht gemerged, weshalb ich darauf ausweichen musste, [bdraco's Fork der HAP-python Repository](https://github.com/bdraco/ha-HAP-python) zu verwenden, anstatt der offiziellen Version. Also musste ich auch die `Pipfile` entsprechend anpassen:
+
+```
+# Old
+hap-python = {extras = ["qrcode"], version = "*"}
+
+# New
+ha-hap-python = {extras = ["qrcode"], editable = true, ref = "dev", git = "https://github.com/bdraco/ha-HAP-python.git"}
+```
+
+Nun einmal `pipenv install` ausgeführt und schon funktionierte wieder alles wie gewollt. Die eine Hälfte der Implementation war damit so gut wie erledigt. Jetzt brauchte ich nur noch echte Daten vom Sensor.
+
+### Auslesen der Sensor-Daten
+
+Beim Auslesen der Daten orientierte ich mich stark an den [Beispielen aus der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples). Als Erstes wollte ich den Sensor in einer Wrapper-Klasse unterbringen:
+
+```python
+class WrappedSensor:
+	def __init__(self):
+		# 1:
+		try:
+			sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+		except (RuntimeError, IOError):
+			sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
+
+		# 2:
+		# These oversampling settings can be tweaked to
+		# change the balance between accuracy and noise in
+		# the data.
+		sensor.set_humidity_oversample(bme680.OS_2X)
+		sensor.set_pressure_oversample(bme680.OS_4X)
+		sensor.set_temperature_oversample(bme680.OS_8X)
+		sensor.set_filter(bme680.FILTER_SIZE_3)
+		sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
+
+		sensor.set_gas_heater_temperature(320)
+		sensor.set_gas_heater_duration(600)
+		sensor.select_gas_heater_profile(0)
+```
+
+### AQI-Algorithmus
+
+Bevor ich wirklich anfing überhaupt selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, ob der Sensor überhaupt richtig funktioniert und korrekt verlötet ist. Dabei stieß ich auf das Skript aqi_sample.py
+
+{{TODO}}
+
+### Service Erstellung
+
+{{TODO}}
 
 ## Quellen
 

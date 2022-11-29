@@ -2,22 +2,22 @@
 
 ## Inhaltsverzeichnis
 
-- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Projektidee und Kontext|Projektidee und Kontext]]
-- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Recherche|Recherche]]
-- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
-- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
-- [[semesters/22-wise/iot/bme680-homekit-accessory/README#Implementation|Implementation]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Projektidee und Kontext|Projektidee und Kontext]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Recherche|Recherche]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Implementation|Implementation]]
 
 Name: Henrik Panhans
 Matrikel-Nummer: 573550
 
-- Projektidee (Motivation)
-- Formulierung der konkreten Aufgabenstellung
-- Systematik der Problemlösung, Dokumentation von (Zwischen-) Ergebnissen
-- Tiefe der Ausarbeitung und Recherche
-- empfohlene weiterführende Schritte
-- Form (bspw. referenzierte Bildbeschriftungen, Quellen, Inhaltsverzeichnis, Rechtschreibung)
-- Grad der Herausforderung
+-   Projektidee (Motivation)
+-   Formulierung der konkreten Aufgabenstellung
+-   Systematik der Problemlösung, Dokumentation von (Zwischen-) Ergebnissen
+-   Tiefe der Ausarbeitung und Recherche
+-   empfohlene weiterführende Schritte
+-   Form (bspw. referenzierte Bildbeschriftungen, Quellen, Inhaltsverzeichnis, Rechtschreibung)
+-   Grad der Herausforderung
 
 ## Projektidee und Kontext
 
@@ -45,9 +45,9 @@ Mir fehlte also nur noch eine Library um mit der Home-App zu kommunizieren. Auch
 
 Mein Techstack war also der Folgende:
 
-- Python 3.10.7, installiert über `pyenv`
-- HAP-python für die Einbindung in die Home-App
-- bme680-python zum Auslesen der Sensordaten
+-   Python 3.10.7, installiert über `pyenv`
+-   HAP-python für die Einbindung in die Home-App
+-   bme680-python zum Auslesen der Sensordaten
 
 ---
 
@@ -55,12 +55,12 @@ Mein Techstack war also der Folgende:
 
 Als ersten Schritt der Durchführungsphase musste ich natürlich die Hardware einrichten und konfigurieren. Ich benötigte Folgendes:
 
-- Bosch BME680 Sensor
-- Raspberry Pi (Modell ist an sich egal, einer ist ein 4B mit 4GB RAM-Speicher)
-- microSD-Karte zur Installation des Betriebsystems
-- Lötkolben
-- 4x Male-to-Female Jumper/Dupont Kabel (z.B. wie [hier auf BerryBase](https://www.berrybase.de/40pin-jumper/dupont-kabel-male-female-trennbar))
-- USB-C Netzkabel
+-   Bosch BME680 Sensor
+-   Raspberry Pi (Modell ist an sich egal, einer ist ein 4B mit 4GB RAM-Speicher)
+-   microSD-Karte zur Installation des Betriebsystems
+-   Lötkolben
+-   4x Male-to-Female Jumper/Dupont Kabel (z.B. wie [hier auf BerryBase](https://www.berrybase.de/40pin-jumper/dupont-kabel-male-female-trennbar))
+-   USB-C Netzkabel
 
 ![[bme680_project_1.jpeg]]
 \- Bosch BME680 Sensor als Breakout-Board von BerryBase
@@ -336,8 +336,8 @@ class WrappedAccessory(Accessory):
 
 Zur Erläuterung:
 
-- `category = CATEGORY_SENSOR` signalisiert der Home-App, dass es sich bei dem Accessory um einen Sensor handelt
-- mit `@Accessory.run_at_interval(15)` bestimmen wir, dass alle 15 Sekunden der Wert, der in der Home-App angezeigt wird aktualisiert werden soll. In meinem Fall bedeutete das, dass ich alle 15 Sekunden die Daten des Sensors auslese.
+-   `category = CATEGORY_SENSOR` signalisiert der Home-App, dass es sich bei dem Accessory um einen Sensor handelt
+-   mit `@Accessory.run_at_interval(15)` bestimmen wir, dass alle 15 Sekunden der Wert, der in der Home-App angezeigt wird aktualisiert werden soll. In meinem Fall bedeutete das, dass ich alle 15 Sekunden die Daten des Sensors auslese.
 
 Der nächste Schritt war die gewünschten _Services_ zu registrieren. Ein Service im Kontext eines Accessories ist eine Fähigkeit, die das Gerät bietet und diese der Home-App zur Anzeige anzubieten. Also habe ich den `def __init__` meines `WrappedAccessory` um folgende Zeilen erweitert:
 
@@ -403,19 +403,19 @@ An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-p
 
 ```json
 {
-  "mac": "F7:6A:13:B6:F2:80",
-  "config_version": 2,
-  "paired_clients": {
-    "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": "e4ae920fbdb29002e10761cdeb7275e1a7d1463da78c6b02559d6eeea2543567"
-  },
-  "client_properties": {
-    "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": {
-      "permissions": 1
-    }
-  },
-  "accessories_hash": "e67c6828ffd3aa8254fa4ad932a6872514b20d62977b332dc5761d111ed123b3e7250ed32161fc5ef5bec192d7dc44cbe725b6806ac9eddee86df246f2589644",
-  "private_key": "you_wish_you_knew_my_private_key",
-  "public_key": "aa2659047b9df62e32f95210ae5d2f3ad4246a5c3bd4b57d9178e7c4da1f1f79"
+    "mac": "F7:6A:13:B6:F2:80",
+    "config_version": 2,
+    "paired_clients": {
+        "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": "e4ae920fbdb29002e10761cdeb7275e1a7d1463da78c6b02559d6eeea2543567"
+    },
+    "client_properties": {
+        "ba77b6d0-ebb7-4721-84ba-37ffd59eaedb": {
+            "permissions": 1
+        }
+    },
+    "accessories_hash": "e67c6828ffd3aa8254fa4ad932a6872514b20d62977b332dc5761d111ed123b3e7250ed32161fc5ef5bec192d7dc44cbe725b6806ac9eddee86df246f2589644",
+    "private_key": "you_wish_you_knew_my_private_key",
+    "public_key": "aa2659047b9df62e32f95210ae5d2f3ad4246a5c3bd4b57d9178e7c4da1f1f79"
 }
 ```
 
@@ -449,26 +449,26 @@ Beim Auslesen der Daten orientierte ich mich stark an den [Beispielen aus der pi
 
 ```python
 class WrappedSensor:
-	def __init__(self):
-		# 1:
-		try:
-			sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
-		except (RuntimeError, IOError):
-			sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
+    def __init__(self):
+        # 1:
+        try:
+            sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+        except (RuntimeError, IOError):
+            sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
 
-		# 2:
-		# These oversampling settings can be tweaked to
-		# change the balance between accuracy and noise in
-		# the data.
-		sensor.set_humidity_oversample(bme680.OS_2X)
-		sensor.set_pressure_oversample(bme680.OS_4X)
-		sensor.set_temperature_oversample(bme680.OS_8X)
-		sensor.set_filter(bme680.FILTER_SIZE_3)
-		sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
+        # 2:
+        # These oversampling settings can be tweaked to
+        # change the balance between accuracy and noise in
+        # the data.
+        sensor.set_humidity_oversample(bme680.OS_2X)
+        sensor.set_pressure_oversample(bme680.OS_4X)
+        sensor.set_temperature_oversample(bme680.OS_8X)
+        sensor.set_filter(bme680.FILTER_SIZE_3)
+        sensor.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
-		sensor.set_gas_heater_temperature(320)
-		sensor.set_gas_heater_duration(600)
-		sensor.select_gas_heater_profile(0)
+        sensor.set_gas_heater_temperature(320)
+        sensor.set_gas_heater_duration(600)
+        sensor.select_gas_heater_profile(0)
 
     def get_data(self) -> SensorData:
         # Read data from sensor, process and put into `SensorData` wrapper class
@@ -521,9 +521,48 @@ Alle weiteren Änderungen können intern in der Klasse `WrappedSensor` vorgenomm
 
 ### AQI-Algorithmus
 
-Bevor ich wirklich anfing überhaupt selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, ob der Sensor überhaupt richtig funktioniert und korrekt verlötet ist. Dabei stieß ich auf das Skript aqi_sample.py
+Bevor ich wirklich anfing überhaupt selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, ob der Sensor überhaupt richtig funktioniert und korrekt verlötet ist. Dabei stieß ich auf das Skript aqi*sample.py. In diesem wurde der Sensor für 5 Minuten lang in kurzen Abständen ausgelesen, um ihn quasi zu kalibrieren. Es wurden die letzten 50 Gas-Werte benutzt um einen Mittelwert zu errechnen und dann eine \_Gas-Baseline* zu speichern. Anschließend wurde bei jedem neuen Auslesen, aus der Abweichung des Gas-Werts zur Baseline, in Kombination mit der Luftfeuchtigkeit (hierbei legt man den Idealwert selbst fest, z.B. 40%) einen _Luftqualitätsscore_ errechnen. Den Algorithmus habe ich im Prinzip 1:1 übernommen:
 
-{{TODO}}
+```python
+class WrappedSensor:
+
+    def __init__(self):
+        super().__init__()
+
+        # 40% Luftfeuchtigkeit werden als optimal angesehen
+        self.hum_baseline = 40.0
+
+        # Definiert die Gewichtung zwischen Feuchtigkeit und Gas-Wert
+        self.hum_weighting = 0.25
+
+        self.gas_baseline = None
+        self.did_complete_burnin = False
+
+	# ...
+
+    def burn_in_sensor(self):
+        start_time = time.time()
+        curr_time = time.time()
+        burn_in_time = 300
+        burn_in_data = []
+
+        print("Collecting gas resistance burn-in data for 5 mins\n")
+
+        while curr_time - start_time < burn_in_time:
+            curr_time = time.time()
+            if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
+                gas = self.sensor.data.gas_resistance
+                burn_in_data.append(gas)
+                print("Gas: {0} Ohms, %RH: {1:.2f}".format(gas, self.sensor.data.humidity))
+                time.sleep(5)
+
+        self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
+
+        print("Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n".format(self.gas_baseline, self.hum_baseline))
+        self.did_complete_burnin = True
+```
+
+Bei der Berechnung des Scores, fand ich allerdings die resultierenden Werte eher unrealistisch, weshalb ich mich nach anderweitiger Inspiration umschaute. Ich fand eine [BME680-Example Repository](https://github.com/G6EJD/BME680-Example), die einen mir besser erscheinenden Algorithmus benutzte. Meine Implementation zur Berechnung sieht so aus:
 
 ### Service Erstellung
 

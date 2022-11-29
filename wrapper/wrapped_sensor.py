@@ -33,11 +33,8 @@ class WrappedSensor:
         super().__init__()
 
         # Set the humidity baseline to 40%, an optimal indoor humidity.
-        self.hum_baseline = 40.0
-
-        # This sets the balance between humidity and gas reading in the
-        # calculation of air_quality_score (25:75, humidity:gas)
-        self.hum_weighting = 0.25
+        self.IDEAL_HUMIDITY = 40.0
+        self.IDEAL_TEMPERATURE = 21.0
 
         self.gas_baseline = None
         self.did_complete_burnin = False
@@ -75,45 +72,24 @@ class WrappedSensor:
 
     def get_air_quality(self, data) -> int:
         if data.heat_stable and self.did_complete_burnin:
-            gas = data.gas_resistance
-            gas_offset = self.gas_baseline - gas
+            temperature_boundary = 100.0 if self.IDEAL_TEMPERATURE < data.temperature else -21.0
+            humidity_boundary = 100.0 if self.IDEAL_HUMIDITY < data.humidity else 0.0
+            gas_boundary = 50000 if self.gas_baseline < data.gas else 5000
 
-            hum = data.humidity
-            hum_offset = hum - self.hum_baseline
+            # Example (36 - 21) / (100 - 21)
+            temperature_deviation_from_ideal = (
+                data.temperature - self.IDEAL_TEMPERATURE) / (temperature_boundary - self.IDEAL_TEMPERATURE)
+            temperature_score = temperature_deviation_from_ideal * 10
 
-            # Calculate hum_score as the distance from the hum_baseline.
-            if hum_offset > 0:
-                hum_score = 100 - self.hum_baseline - hum_offset
-                hum_score /= 100 - self.hum_baseline
-                hum_score *= self.hum_weighting * 100
-            else:
-                hum_score = self.hum_baseline + hum_offset
-                hum_score /= self.hum_baseline
-                hum_score *= self.hum_weighting * 100
-
-            # Calculate gas_score as the distance from the gas_baseline.
-            if gas_offset > 0:
-                gas_score = gas / self.gas_baseline
-                gas_score *= 100 - (self.hum_weighting * 100)
-            else:
-                gas_score = 100 - (self.hum_weighting * 100)
-
-            # Calculate air_quality_score.
-            air_quality_score = hum_score + gas_score
-            mapped_aqi_score = (air_quality_score / 100) * 5
+            humidity_deviation_from_ideal = (
+                data.temperature - self.IDEAL_HUMIDITY) / (humidity_boundary - self.IDEAL_HUMIDITY)
+            humidity_score = temperature_deviation_from_ideal * 10
 
             print(
-                "Gas: {0:.2f} Ohms, humidity: {1:.2f} %RH, air quality: {2:.2f} / {3}".format(
-                    gas, hum, air_quality_score, mapped_aqi_score
-                )
-            )
-            return math.floor(mapped_aqi_score)
+                f"Temperature Score: {temperature_score}, hum score: {humidity_score}")
+
+            return 0
         else:
-            print(
-                "Heat stable: {0}, sensor burn in complet: {1}".format(
-                    data.heat_stable, self.did_complete_burnin
-                )
-            )
             # Return unknown value
             return 0
 

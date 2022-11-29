@@ -313,6 +313,8 @@ Dieser Starter-Code ist größtenteils der [Beispiel-Code von HAP-python](https:
 
 Anfangs war ich der Auffassung, dass ich pro Metrik eine einzelne Unterklasse von `Accessory` brauche, die sich dann jeweils nur um die für sie relevanten Daten kümmert. Das Problem hiermit war Zeitsynchronisation - ein Klassiker. Da alle Unterklassen/Accessories fast gleichzeitig jeweils Daten vom Sensor angefordert haben, hat dieser mehrere Male hintereinander gemessen, was nicht nur die Ergebnisse verfälscht hat, da sich der Sensor aufheizt, sondern dies auch einfach unnötige Arbeit ist. Außerdem hätte das dazu geführt, dass drei separate Sensoren in der Home-App angezeigt werden, was natürlich auch semantisch Quatsch ist, da ja alle Daten nur von einem einzigen Sensor kommen.
 
+### WrappedAccessory
+
 Ein Sensor-Accessory hat die folgenden Grundstruktur:
 
 ```python
@@ -341,7 +343,6 @@ Der nächste Schritt war die gewünschten _Services_ zu registrieren. Ein Servic
 
 ```python
 # ...
-
 humidity_service = self.add_preload_service("HumiditySensor")
 self.humidity_char = humidity_service.get_characteristic("CurrentRelativeHumidity")
 
@@ -430,19 +431,19 @@ Das klang viel versprechend. Nach Lesen des ersten Satz war mir bewusst, wo mein
 
 \- PR Beschreibung von @bdraco
 
-Unglücklicherweise wurde diese PR bis heute (Stand 8. November 2022) nicht gemerged, weshalb ich darauf ausweichen musste, [bdraco's Fork der HAP-python Repository](https://github.com/bdraco/ha-HAP-python) zu verwenden, anstatt der offiziellen Version. Also musste ich auch die `Pipfile` entsprechend anpassen:
+Die PR wurde mittlerweile [gemerged](https://github.com/ikalchev/HAP-python/commit/9a54ecf84faca675364d374eb1cf2dc7ab008ce5), aber es wurde noch kein neuer offizieller Release veröffentlicht (Stand 29.11.). Deshalb habe ich entschlossen, HAP-python einfach direkt vom `dev` Branch zu verwenden. Also musste ich auch die `Pipfile` entsprechend anpassen:
 
 ```
 # Old
 hap-python = {extras = ["qrcode"], version = "*"}
 
 # New
-ha-hap-python = {extras = ["qrcode"], editable = true, ref = "dev", git = "https://github.com/bdraco/ha-HAP-python.git"}
+ha-hap-python = {extras = ["qrcode"], editable = true, ref = "dev", git = "https://github.com/ikalchev/HAP-python"}
 ```
 
 Nun einmal `pipenv install` ausgeführt und schon funktionierte wieder alles wie gewollt. Die eine Hälfte der Implementation war damit so gut wie erledigt. Jetzt brauchte ich nur noch echte Daten vom Sensor.
 
-### Auslesen der Sensor-Daten
+### WrappedSensor
 
 Beim Auslesen der Daten orientierte ich mich stark an den [Beispielen aus der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples). Als Erstes wollte ich den Sensor in einer Wrapper-Klasse unterbringen:
 
@@ -468,7 +469,55 @@ class WrappedSensor:
 		sensor.set_gas_heater_temperature(320)
 		sensor.set_gas_heater_duration(600)
 		sensor.select_gas_heater_profile(0)
+
+    def get_data(self) -> SensorData:
+        # Read data from sensor, process and put into `SensorData` wrapper class
 ```
+
+Zur Erläuterung:
+
+1. Hier erstellen wir den Sensor im Code und geben ihm als Parameter den Wert `I2C_ADDR_PRIMARY` welcher die Adresse des Sensors darstellt. Kann der Sensor an dieser Adresse nicht gefunden werden, versuchen wir ihn noch einmal an der sekundären Adresse zu finden. Die beiden möglichen Adressen sind `76` und `77` (Hexadezimal), unter welcher der Sensor zu finden ist, kann wie oben beschrieben mit `i2cdetect -y 1` herausgefunden werden.
+2. Diese Einstellungen konfigurieren den Sensor etwas, in dem sie zum Beispiel die Dauer einstellen, die der Gas-Sensor benutzt um sich aufzuheizen wenn Daten angefragt werden. Je länger diese Dauer ist, desto präziser ist der ausgelesene Wert, aber er erhöht natürlich auch die Antwortzeit des Sensors.
+
+Als Nächstes habe ich den Sensor dem Accessory über dessen `__init__` übergeben:
+
+```python
+def __init__(self, driver, display_name, sensor: WrappedSensor):
+    super().__init__(driver, display_name)
+    self.sensor = sensor
+
+    # Erstellen der gewünschten Services, siehe oben bei WrappedAccessory
+```
+
+Dann musste ich noch eine kleine Änderung in `main.py` vornehmen:
+
+```python
+# ...
+from wrapper.wrapped_sensor import WrappedSensor
+
+sensor = WrappedSensor()
+sensor.burn_in_sensor() # Erläuterung zu dieser Zeile folgt im Abschnitt AQI-Algorithmus
+
+# ...
+accessory = WrappedAccessory(accessory_driver, "BME680Sensor", sensor=sensor)
+```
+
+Jetzt kann `WrappedAccessory` in der Methode `run(self)` die Methode `get_data(self) -> SensorData` des `WrappedSensor` aufrufen und die echten Daten verwenden:
+
+```python
+class WrappedAccessory(Accessory):
+
+    # ...
+
+    @Accessory.run_at_interval(15)
+    def run(self):
+        data = self.sensor.get_data()
+        self.humidity_char.set_value(data.humidity)
+        self.temp_char.set_value(data.temperature)
+        self.aqi_char.set_value(data.aqi_score)
+```
+
+Alle weiteren Änderungen können intern in der Klasse `WrappedSensor` vorgenommen werden.
 
 ### AQI-Algorithmus
 

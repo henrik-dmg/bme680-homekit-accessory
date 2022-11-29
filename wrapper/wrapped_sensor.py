@@ -51,7 +51,7 @@ class WrappedSensor:
         # change the balance between accuracy and noise in
         # the data.
 
-        sensor.set_humidity_oversample(bme680.OS_2X)
+        sensor.set_humidity_oversample(bme680.OS_8X)
         sensor.set_pressure_oversample(bme680.OS_4X)
         sensor.set_temperature_oversample(bme680.OS_8X)
         sensor.set_filter(bme680.FILTER_SIZE_3)
@@ -86,7 +86,6 @@ class WrappedSensor:
                 hum_score = 100 - self.hum_baseline - hum_offset
                 hum_score /= 100 - self.hum_baseline
                 hum_score *= self.hum_weighting * 100
-
             else:
                 hum_score = self.hum_baseline + hum_offset
                 hum_score /= self.hum_baseline
@@ -96,7 +95,6 @@ class WrappedSensor:
             if gas_offset > 0:
                 gas_score = gas / self.gas_baseline
                 gas_score *= 100 - (self.hum_weighting * 100)
-
             else:
                 gas_score = 100 - (self.hum_weighting * 100)
 
@@ -120,7 +118,8 @@ class WrappedSensor:
             return 0
 
     def burn_in_sensor_async(self):
-        self.burn_in_thread = CustomThread(1, "BurninThread-1", self.burn_in_sensor)
+        self.burn_in_thread = CustomThread(
+            1, "BurninThread-1", self.burn_in_sensor)
         self.burn_in_thread.start()
 
     def burn_in_sensor(self):
@@ -142,7 +141,8 @@ class WrappedSensor:
             if self.sensor.get_sensor_data() and self.sensor.data.heat_stable:
                 gas = self.sensor.data.gas_resistance
                 burn_in_data.append(gas)
-                print("Gas: {0} Ohms".format(gas))
+                print("Gas: {0} Ohms, %RH: {1:.2f}".format(
+                    gas, self.sensor.data.humidity))
                 time.sleep(5)
 
         self.gas_baseline = sum(burn_in_data[-50:]) / 50.0

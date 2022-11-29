@@ -30,8 +30,6 @@ class WrappedAccessory(Accessory):
     @Accessory.run_at_interval(15)
     def run(self):
         data = self.sensor.get_data()
-        print(data.temperature)
         self.humidity_char.set_value(data.humidity)
         self.temp_char.set_value(data.temperature)
         self.aqi_char.set_value(data.aqi_score)
-

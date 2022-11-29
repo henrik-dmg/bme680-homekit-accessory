@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 bme680 = "*"
-ha-hap-python = {extras = ["qrcode"], editable = true, ref = "dev", git = "https://github.com/bdraco/ha-HAP-python.git"}
+ha-hap-python = {extras = ["qrcode"], editable = true, ref = "dev", git = "https://github.com/ikalchev/HAP-python"}
 
 [dev-packages]
 autopep8 = "*"

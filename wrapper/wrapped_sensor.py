@@ -36,8 +36,8 @@ class WrappedSensor:
         self.IDEAL_HUMIDITY = 40.0
         self.IDEAL_TEMPERATURE = 21.0
 
-        self.gas_baseline = None
-        self.did_complete_burnin = False
+        self.gas_baseline = 547658
+        self.did_complete_burnin = True
 
         try:
             sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
@@ -74,21 +74,39 @@ class WrappedSensor:
         if data.heat_stable and self.did_complete_burnin:
             temperature_boundary = 100.0 if self.IDEAL_TEMPERATURE < data.temperature else -21.0
             humidity_boundary = 100.0 if self.IDEAL_HUMIDITY < data.humidity else 0.0
-            gas_boundary = 50000 if self.gas_baseline < data.gas else 5000
+            gas_boundary = 500000 if self.gas_baseline < data.gas_resistance else 50000
 
             # Example (36 - 21) / (100 - 21)
             temperature_deviation_from_ideal = (
                 data.temperature - self.IDEAL_TEMPERATURE) / (temperature_boundary - self.IDEAL_TEMPERATURE)
             temperature_score = temperature_deviation_from_ideal * 10
 
+            # Example (63 - 40) / (100 - 40)
             humidity_deviation_from_ideal = (
-                data.temperature - self.IDEAL_HUMIDITY) / (humidity_boundary - self.IDEAL_HUMIDITY)
-            humidity_score = temperature_deviation_from_ideal * 10
+                data.humidity - self.IDEAL_HUMIDITY) / (humidity_boundary - self.IDEAL_HUMIDITY)
+            humidity_score = humidity_deviation_from_ideal * 10
+
+            gas_deviation_from_ideal = (
+                data.gas_resistance - self.gas_baseline) / (gas_boundary - self.gas_baseline)
+            gas_score = gas_deviation_from_ideal * 80
+
+            total_score = min(100.0, temperature_score +
+                              humidity_score + gas_score)
+            inverted_score = 100 - total_score
 
             print(
-                f"Temperature Score: {temperature_score}, hum score: {humidity_score}")
+                f"Temperature Score: {temperature_score}, hum score: {humidity_score}, gas score: {gas_score}, total: {total_score}")
 
-            return 0
+            if inverted_score < 20:
+                return 1
+            elif inverted_score < 40:
+                return 2
+            elif inverted_score < 60:
+                return 3
+            elif inverted_score < 80:
+                return 4
+            else:
+                return 5
         else:
             # Return unknown value
             return 0
@@ -124,9 +142,8 @@ class WrappedSensor:
         self.gas_baseline = sum(burn_in_data[-50:]) / 50.0
 
         print(
-            "Gas baseline: {0} Ohms, humidity baseline: {1:.2f} %RH\n".format(
-                self.gas_baseline, self.hum_baseline
-            )
+            "Gas baseline: {0} Ohms".format(
+                self.gas_baseline)
         )
 
         self.did_complete_burnin = True

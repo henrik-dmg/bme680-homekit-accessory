@@ -1,5 +1,8 @@
 # Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit
 
+Name: Henrik Panhans
+Matrikel-Nummer: 573550
+
 ## Inhaltsverzeichnis
 
 -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Projektidee und Kontext|Projektidee und Kontext]]
@@ -7,17 +10,14 @@
 -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
 -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
 -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Implementation|Implementation]]
-
-Name: Henrik Panhans
-Matrikel-Nummer: 573550
-
--   Projektidee (Motivation)
--   Formulierung der konkreten Aufgabenstellung
--   Systematik der Problemlösung, Dokumentation von (Zwischen-) Ergebnissen
--   Tiefe der Ausarbeitung und Recherche
--   empfohlene weiterführende Schritte
--   Form (bspw. referenzierte Bildbeschriftungen, Quellen, Inhaltsverzeichnis, Rechtschreibung)
--   Grad der Herausforderung
+    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#HomeKit Bridge Server|HomeKit Bridge Server]]
+    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#WrappedAccessory|WrappedAccessory]]
+    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#WrappedSensor|WrappedSensor]]
+    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#AQI-Algorithmus|AQI-Algorithmus]]
+    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Service Erstellung|Service Erstellung]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Fazit|Fazit]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Ausblick|Ausblick]]
+-   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Quellen|Quellen]]
 
 ## Projektidee und Kontext
 
@@ -63,17 +63,17 @@ Als ersten Schritt der Durchführungsphase musste ich natürlich die Hardware ei
 -   USB-C Netzkabel
 
 ![[bme680_project_1.jpeg]]
-\- Bosch BME680 Sensor als Breakout-Board von BerryBase
+\- Bild #1, Bosch BME680 Sensor als Breakout-Board von BerryBase
 
-Zuerst ließ ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
+Zuerst ließ ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste (sichtbar rechts in Bild #1) an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
 Nach dem Löten und dem Anschließen der Jumper-Kabel sah das Ganze dann so aus:
 
 ![[bme680_project_3.jpeg]]
-\- BME680 Sensor mit angelöteter Pin-Leiste und daran angeschlossenen Jumper-Kabeln.
+\- Bild #2, BME680 Sensor mit angelöteter Pin-Leiste und daran angeschlossenen Jumper-Kabeln.
 
-{{TODO: Add comment about which Pins to use}}
+Da ich das I2C-Interface benutzen wollte, musste ich nur vier der sechs Pins an den Sensor anschließen. Wie in Bild #2 zu sehen, die beiden oberen Pins sind unbenutzt. Das sind die Pins `SC0` und `CS` (Bild #1).
 
-Nun musste ich also theoretisch nur noch die Kabel an die richtigen GPIO-Pins (General Purpose In/Out) anschließen und das I2C-Interface des Raspberry Pi aktivieren und schon sollte der Sensor erkannt werden. Hierzu musste ich erst einmal Raspberry Pi OS installieren. Hierzu nutzte ich das Tool [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Ich wählte Raspberry Pi OS Lite 64-Bit, hierbei bedeutet Lite, dass das Betriebsystem keine grafische Oberfläche wie man sie als normaler Endnutzer von macOS oder Windows kennt, sondern nur eine Kommando-Zeile. Da ich mit dem Pi aber sowieso eigentlich nur über SSH arbeite, ist das absolute ausreichend. Praktischerweise kann man dem Raspberry Pi Imager direkt auch WLAN, SSH und das Login des Pi konfigurieren, sodass beim ersten Bootvorgang direkt schon alles bereit ist. Nachdem das OS erfolgreich auf der angeschlossenen microSD-Karte installiert war, steckte ich diese in den Raspberry Pi und schaltete die Stromversorgung an. Kurzes Warten und ein Blick auf das Interface meiner FritzBox bestätigten, dass der Pi sich erfolgreich im Netzwerk eingewählt hatte. Also konnte ich mich nun mit SSH verbinden:
+Nun musste ich also theoretisch nur noch die Kabel an die richtigen GPIO-Pins (General Purpose In/Out) des Raspberry Pi anschließen und das I2C-Interface des Pi aktivieren und schon sollte der Sensor erkannt werden. Hierzu musste ich erst einmal Raspberry Pi OS installieren. Hierzu nutzte ich das Tool [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Ich wählte Raspberry Pi OS Lite 64-Bit, hierbei bedeutet Lite, dass das Betriebsystem keine grafische Oberfläche wie man sie als normaler Endnutzer von macOS oder Windows kennt, sondern nur eine Kommando-Zeile. Da ich mit dem Pi aber sowieso eigentlich nur über SSH arbeite, ist das absolute ausreichend. Praktischerweise kann man dem Raspberry Pi Imager direkt auch WLAN, SSH und das Login des Pi konfigurieren, sodass beim ersten Bootvorgang direkt schon alles bereit ist. Nachdem das OS erfolgreich auf der angeschlossenen microSD-Karte installiert war, steckte ich diese in den Raspberry Pi und schaltete die Stromversorgung an. Kurzes Warten und ein Blick auf das Interface meiner FritzBox bestätigten, dass der Pi sich erfolgreich im Netzwerk eingewählt hatte. Also konnte ich mich nun mit SSH verbinden:
 
 ```bash
 $ ssh pi@raspberry-henrik
@@ -117,12 +117,12 @@ GPIO26 (37) (38) GPIO20
 Eine bessere Visualisierung ist aber dieses Bild:
 
 ![GPIO-Pinout Diagram](https://www.laub-home.de/images/thumb/b/b2/GPIO-Pinout-Diagram-2.png/1200px-GPIO-Pinout-Diagram-2.png)
-\- Visualisierung der GPIO-Pin Belegung eines Raspberry Pi 4
+\- Bild #3, Visualisierung der GPIO-Pin Belegung eines Raspberry Pi 4
 
 Laut den Anweisungen von [Laub-Home](https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor#Anschluss_des_Sensors_am_GPIO) sollte ich die Pins 1 (3v3 Strom), 3 (SDA), 5 (SCL) und 6 (Ground) benutzen. Dies stellte allerdings ein Problem dar, da ich an meinem Raspberry Pi einen kleinen Lüfter betreibe, der sich je nach Last zuschaltet um den Prozessor kühl zu halten. Dieser blockierte die vom Sensor benötigten Pins:
 
 ![[bme680_project_2.jpeg]]
-\- Raspberry Pi GPIO-Pinleiste, wobei Pin 1, 3, 5 und 6 markiert sind
+\- Bild #4, Raspberry Pi GPIO-Pinleiste, wobei Pin 1, 3, 5 und 6 markiert sind
 
 Es stellte sich heraus, dass der Raspberry Pi zwei verschiedene I2C-Interfaces hat, das Primäre wie erwähnt an Pin 3 und 5 und das Zweite an Pin 27 und 28. Also schloss ich den Sensor zunächst einmal an Pin 27 und 28 an, da diese Pins nicht vom Lüfter blockiert wurden.
 Außerdem musste ich erst noch das I2C-Interface softwareseitig aktivieren. Das geht mit dem Befehl:
@@ -399,6 +399,8 @@ Or enter this code in your HomeKit app on your iOS device: 559-25-115
 Wenn man den erwähnten QR-Code scannt, öffnet sich die Home-App und fragt einen, ob man die "RaspiBridge" hinzufügen möchte. Dann muss man sich durch ein kurzes Setup klicken und den Sensor einem Raum zuweisen. Nach dem Setup sieht das Ganze dann so aus:
 
 ![[bem680_project_home_app_screenshot.png]]
+\- Bild #5, Screenshot aus der Home-App nachdem der Sensor eingerichtet wurde
+
 An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-python für Persistenz verwendet. Sobald `start()` auf einem `AccessoryDriver` aufgerufen wird, liest dieser (falls vorhanden) die `accessory.state` Datei aus oder erstellt diese, falls sie nicht existiert. Diese Datei ist eine relativ simple JSON-Datei, in der einige Metadaten gespeichert werden, damit man nicht bei jedem Start des `AccessoryDriver` den Pairing-Prozess neu durchführen muss. Die von meinem Pi gespeicherte Datei sieht zum Beispiel so aus:
 
 ```json
@@ -472,6 +474,24 @@ class WrappedSensor:
 
     def get_data(self) -> SensorData:
         # Read data from sensor, process and put into `SensorData` wrapper class
+        self.sensor.get_sensor_data()
+        aqi_score = self.get_air_quality(self.sensor.data)
+        return SensorData(
+            temperature=self.sensor.data.temperature,
+            humidity=self.sensor.data.humidity,
+            pressure=self.sensor.data.pressure,
+            aqi_score=aqi_score
+        )
+
+
+class SensorData:
+    """Structure for storing BME680 sensor data."""
+
+    def __init__(self, temperature, pressure, humidity, aqi_score):
+        self.temperature = temperature
+        self.pressure = pressure
+        self.humidity = humidity
+        self.aqi_score = aqi_score
 ```
 
 Zur Erläuterung:
@@ -521,7 +541,7 @@ Alle weiteren Änderungen können intern in der Klasse `WrappedSensor` vorgenomm
 
 ### AQI-Algorithmus
 
-Bevor ich wirklich anfing überhaupt selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, ob der Sensor überhaupt richtig funktioniert und korrekt verlötet ist. Dabei stieß ich auf das Skript aqi*sample.py. In diesem wurde der Sensor für 5 Minuten lang in kurzen Abständen ausgelesen, um ihn quasi zu kalibrieren. Es wurden die letzten 50 Gas-Werte benutzt um einen Mittelwert zu errechnen und dann eine \_Gas-Baseline* zu speichern. Anschließend wurde bei jedem neuen Auslesen, aus der Abweichung des Gas-Werts zur Baseline, in Kombination mit der Luftfeuchtigkeit (hierbei legt man den Idealwert selbst fest, z.B. 40%) einen _Luftqualitätsscore_ errechnen. Den Algorithmus habe ich im Prinzip 1:1 übernommen:
+Bevor ich wirklich anfing überhaupt selber Code zu schreiben, probierte ich Einige der [Beispiel-Skripte in der pimoroni-Repository](https://github.com/pimoroni/bme680-python/tree/master/examples) aus, um zu testen, ob der Sensor überhaupt richtig funktioniert und korrekt verlötet ist. Dabei stieß ich auf das Skript aqi*sample.py. In diesem wurde der Sensor für 5 Minuten lang in kurzen Abständen ausgelesen, um ihn quasi zu kalibrieren. Es wurden die letzten 50 Gas-Werte benutzt um einen Mittelwert zu errechnen und dann eine \_Gas-Baseline* zu speichern. Anschließend wurde bei jedem neuen Auslesen, aus der Abweichung des Gas-Werts zur Baseline, in Kombination mit der Luftfeuchtigkeit (hierbei legt man den Idealwert selbst fest, z.B. 40%) einen _Luftqualitätsscore_ errechnen. Den Algorithmus zum Erstellen eines Basiswerts habe ich im Prinzip 1:1 übernommen:
 
 ```python
 class WrappedSensor:
@@ -564,19 +584,118 @@ class WrappedSensor:
 
 Bei der Berechnung des Scores, fand ich allerdings die resultierenden Werte eher unrealistisch, weshalb ich mich nach anderweitiger Inspiration umschaute. Ich fand eine [BME680-Example Repository](https://github.com/G6EJD/BME680-Example), die einen mir besser erscheinenden Algorithmus benutzte. Meine Implementation zur Berechnung sieht so aus:
 
+```python
+temperature_boundary = 100.0 if self.IDEAL_TEMPERATURE < data.temperature else -21.0
+humidity_boundary = 100.0 if self.IDEAL_HUMIDITY < data.humidity else 0.0
+gas_boundary = 500000 if self.gas_baseline < data.gas_resistance else 50000
+
+# IDEAL_TEMPERATURE kann zum Beispiel als 21 definiert
+temperature_deviation_from_ideal = (data.temperature - self.IDEAL_TEMPERATURE) / (temperature_boundary - self.IDEAL_TEMPERATURE)
+temperature_score = temperature_deviation_from_ideal * 10
+
+# IDEAL_HUMIDITY kann zum Beispiel als 40 definiert werden
+humidity_deviation_from_ideal = (data.humidity - self.IDEAL_HUMIDITY) / (humidity_boundary - self.IDEAL_HUMIDITY)
+humidity_score = humidity_deviation_from_ideal * 10
+
+gas_deviation_from_ideal = (data.gas_resistance - self.gas_baseline) / (gas_boundary - self.gas_baseline)
+gas_score = gas_deviation_from_ideal * 80
+
+total_score = 100 - min(100.0, temperature_score + humidity_score + gas_score)
+```
+
+Zusammengefasst berechnet dieser Algorithmus eine Punktzahl von 0 bis 100. Je weiter die gemessenen Werte von den definierten Idealwerten abweichen, desto niedriger. Die Gewichtung hierbei ist folgendermaßen:
+
+-   Temperatur 10%
+-   Luftfeuchtigkeit 10%
+-   Gaswiderstand 80%
+
+Nun musste dieser Score von 0 bis 100 noch auf eine Skala von 1 bis 5 gemapped werden, was ich aber an dieser Stelle als trivial ansehe.
+
 ### Service Erstellung
 
-{{TODO}}
+Nun war ich mit der Implementation soweit fertig (abgesehen von kleineren Fixes), sodass ich das Ganze mal so richtig austesten wollte, sprich über längeren Zeitraum. Dafür erstellte ich also einen Service:
+
+```bash
+sudo nano /etc/systemd/system/bme680.service
+```
+
+Bei der folgenden Konfiguration des Service orientierte ich mich stark an einem [Beispiel von Rob Peck](https://www.robpeck.com/2017/11/using-pipenv-with-systemd/), da die Erstellung eines Service in Verbindung mit `pipenv` etwas trickreich ist. Man muss auf jeden Fall das `WorkingDirectory` spezifizieren, und den absoluten Pfad zu der gewünschten `pipenv`-Installation, sonst werden die installierten Packages nicht gefunden.
+
+```bash
+[Unit]
+Description=HAP-python daemon
+Wants=pigpiod.service
+After=network-online.target pigpiod.service
+
+[Service]
+User=pi
+Restart=always
+# Script starting HAP-python, e.g. main.py
+WorkingDirectory=/home/pi/bme680-homekit-accessory
+ExecStart=/home/pi/.local/bin/pipenv run python /home/pi/bme680-homekit-accessory/main.py
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Zur Erläuterung:
+
+-   `Wants=pigpiod.service` definiert sozusagen eine Dependency auf einen anderen Service. In diesem Fall handelt es sich um den Service der die GPIO-Pins bereitstellt
+-   `After=network-online.target pigpiod.service` sagt dem System, das der `bme680.service` erst gestartet werden soll, wenn das Netzwerk und die GPIO-Pins verfügbar sind
+-   `ExecStart` ist der tatsächliche Befehl der vom System ausgeführt wird, hier starten wir den HAP-python Server
+
+Ich muss wirklich mit vielen verschiedenen Kombination von absoluten und relativen Pfaden rumspielen, bevor ich eine Kombi fand, bei der `pipenv` alle Pfade und Packages richtig erkannte.
+
+Anschließend habe ich den Service beim Boot aktiviert:
+
+```bash
+sudo systemctl enable bme680
+```
+
+Und um den Service sofort zu starten
+
+```bash
+sudo systemctl start bme680
+```
+
+Um zu überprüfen, ob auch alles läuft wie gewünscht, habe ich mir die Logs anzeigen lassen:
+
+```bash
+journalctl -u bme680 -b
+
+-- Journal begins at Thu 2022-09-22 05:06:10 CEST, ends at Mon 2022-12-05 10:45:33 CET. --
+Nov 29 10:40:26 raspberry-henrik systemd[1]: Started HAP-python daemon.
+Nov 29 10:45:38 raspberry-henrik pipenv[774]: [accessory_driver] Loading Accessory state from `/home/p>
+Nov 29 10:45:38 raspberry-henrik pipenv[774]: [accessory_driver] Starting the event loop
+Nov 29 10:45:38 raspberry-henrik pipenv[774]: [accessory_driver] Starting accessory RaspiBridge on add>
+Nov 29 10:45:38 raspberry-henrik pipenv[774]: [hap_protocol] ('192.168.178.26', 51488): Connection mad>
+Nov 29 11:03:09 raspberry-henrik pipenv[774]: Collecting gas resistance burn-in data for 5 mins
+Nov 29 11:03:09 raspberry-henrik pipenv[774]: Gas: 160272.1883473701 Ohms, %RH: 70.27
+Nov 29 11:03:09 raspberry-henrik pipenv[774]: Gas: 252819.5008894688 Ohms, %RH: 70.20
+Nov 29 11:03:09 raspberry-henrik pipenv[774]: Gas: 256348.43893691813 Ohms, %RH: 67.82
+# ...
+```
+
+## Fazit
+
+Alles in allem war es ein meiner Meinung nach sehr interessantes Projekt. Erstens wollte ich so etwas in die Richtung schon wirklich lange machen, da ich HomeKit spannend finde und außerdem mein Pi nur rumlag und ich schon fast ein schlechtes Gewissen entwickelt habe deswegen. Weiterhin habe ich wirklich viel gelernt, angefangen beim Löten, aber auch vor Allem softwareseitige Dinge, so wie Serviceerstellung und -konfiguration unter Linux, die Verwendung von `pipenv` und Python generell. Bisher hatte ich bisher mit Python nämlich nur sehr einfach Skripts geschrieben.
+
+## Ausblick
+
+Um das Projekt noch weiterzuführen, könnte man mehrere Dinge tun. Zum Einen könnte ich mehrere Raspberry Pis mit Sensoren ausstatten und so zum Beispiel die Luftqualität in meiner gesamten Wohnung messen. Zum Anderen könnte ich die gemessen Daten aber auch in irgendeiner Form mit ihrer jeweiligen Timestamp persistieren und dann einen zeitlichen Verlauf der Daten visualisieren, sodass man beispielsweise sehen kann, wann ich gelüftet habe (zumindest im Winter würde das nämlich logischerweise zu einem Temperatureinbruch führen).
+
+{{ TODO: nummerier bilder}}
 
 ## Quellen
 
-Bilder die nicht explizit gekennzeichnet sind, wurden von mir selbst aufgenommen
-https://www.robpeck.com/2017/11/using-pipenv-with-systemd/
-https://github.com/dnutiu/bme680-homekit/blob/master/sensors/main.py
-https://github.com/ikalchev/HAP-python
-https://pipenv.pypa.io/en/latest/
-https://github.com/pyenv/pyenv
-https://www.balena.io/etcher/
-https://www.raspberrypi.com/software/
-https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor
-https://github.com/pimoroni/bme680-python
+-   Die meisten Quellen sind direkt im Text verlinkt
+-   Bilder die nicht explizit gekennzeichnet sind, wurden von mir selbst aufgenommen
+-   https://www.robpeck.com/2017/11/using-pipenv-with-systemd/
+-   https://github.com/dnutiu/bme680-homekit/blob/master/sensors/main.py
+-   https://github.com/ikalchev/HAP-python
+-   https://pipenv.pypa.io/en/latest/
+-   https://github.com/pyenv/pyenv
+-   https://www.balena.io/etcher/
+-   https://www.raspberrypi.com/software/
+-   https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor
+-   https://github.com/pimoroni/bme680-python

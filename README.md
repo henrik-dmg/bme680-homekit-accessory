@@ -117,7 +117,7 @@ GPIO26 (37) (38) GPIO20
 Eine bessere Visualisierung ist aber dieses Bild:
 
 ![GPIO-Pinout Diagram](https://www.laub-home.de/images/thumb/b/b2/GPIO-Pinout-Diagram-2.png/1200px-GPIO-Pinout-Diagram-2.png)
-\- Bild #3, Visualisierung der GPIO-Pin Belegung eines Raspberry Pi 4
+\- Bild #3, von [Laub-Home](https://www.laub-home.de/images/thumb/b/b2/GPIO-Pinout-Diagram-2.png/1200px-GPIO-Pinout-Diagram-2.png), Visualisierung der GPIO-Pin Belegung eines Raspberry Pi 4
 
 Laut den Anweisungen von [Laub-Home](https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor#Anschluss_des_Sensors_am_GPIO) sollte ich die Pins 1 (3v3 Strom), 3 (SDA), 5 (SCL) und 6 (Ground) benutzen. Dies stellte allerdings ein Problem dar, da ich an meinem Raspberry Pi einen kleinen Lüfter betreibe, der sich je nach Last zuschaltet um den Prozessor kühl zu halten. Dieser blockierte die vom Sensor benötigten Pins:
 
@@ -683,8 +683,6 @@ Alles in allem war es ein meiner Meinung nach sehr interessantes Projekt. Ersten
 ## Ausblick
 
 Um das Projekt noch weiterzuführen, könnte man mehrere Dinge tun. Zum Einen könnte ich mehrere Raspberry Pis mit Sensoren ausstatten und so zum Beispiel die Luftqualität in meiner gesamten Wohnung messen. Zum Anderen könnte ich die gemessen Daten aber auch in irgendeiner Form mit ihrer jeweiligen Timestamp persistieren und dann einen zeitlichen Verlauf der Daten visualisieren, sodass man beispielsweise sehen kann, wann ich gelüftet habe (zumindest im Winter würde das nämlich logischerweise zu einem Temperatureinbruch führen).
-
-{{ TODO: nummerier bilder}}
 
 ## Quellen
 

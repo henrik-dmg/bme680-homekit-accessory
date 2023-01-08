@@ -72,23 +72,23 @@ class WrappedSensor:
 
     def get_air_quality(self, data) -> int:
         if data.heat_stable and self.did_complete_burnin:
-            temperature_boundary = 100.0 if self.IDEAL_TEMPERATURE < data.temperature else -21.0
+            temperature_boundary = 50.0 if self.IDEAL_TEMPERATURE < data.temperature else -21.0
             humidity_boundary = 100.0 if self.IDEAL_HUMIDITY < data.humidity else 0.0
             gas_boundary = 500000 if self.gas_baseline < data.gas_resistance else 50000
 
             # Example (36 - 21) / (100 - 21)
             temperature_deviation_from_ideal = (
                 data.temperature - self.IDEAL_TEMPERATURE) / (temperature_boundary - self.IDEAL_TEMPERATURE)
-            temperature_score = temperature_deviation_from_ideal * 10
+            temperature_score = temperature_deviation_from_ideal * 25
 
             # Example (63 - 40) / (100 - 40)
             humidity_deviation_from_ideal = (
                 data.humidity - self.IDEAL_HUMIDITY) / (humidity_boundary - self.IDEAL_HUMIDITY)
-            humidity_score = humidity_deviation_from_ideal * 10
+            humidity_score = humidity_deviation_from_ideal * 25
 
             gas_deviation_from_ideal = (
                 data.gas_resistance - self.gas_baseline) / (gas_boundary - self.gas_baseline)
-            gas_score = gas_deviation_from_ideal * 80
+            gas_score = gas_deviation_from_ideal * 50
 
             total_score = min(100.0, temperature_score +
                               humidity_score + gas_score)

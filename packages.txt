@@ -1,4 +1,0 @@
-python3-pip
-python3-smbus
-i2c-tools
-libavahi-compat-libdnssd-dev

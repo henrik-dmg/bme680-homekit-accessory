@@ -1,23 +1,22 @@
 # Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit
 
-Name: Henrik Panhans
-Matrikel-Nummer: 573550
-
 ## Inhaltsverzeichnis
 
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Projektidee und Kontext|Projektidee und Kontext]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Recherche|Recherche]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Hardware|Einrichtung der Hardware]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung der Entwicklungsumgebung|Einrichtung der Entwicklungsumgebung]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Implementation|Implementation]]
-    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#HomeKit Bridge Server|HomeKit Bridge Server]]
-    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#WrappedAccessory|WrappedAccessory]]
-    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#WrappedSensor|WrappedSensor]]
-    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#AQI-Algorithmus|AQI-Algorithmus]]
-    -   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Service Erstellung|Service Erstellung]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Fazit|Fazit]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Ausblick|Ausblick]]
--   [[semesters/22-wise/iot/bme680-homekit-accessory/README#Quellen|Quellen]]
+- [Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit](#nutzung-eines-bme680-sensors-an-einem-raspberry-pi-als-luftqualitätssensor-in-homekit)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [Projektidee und Kontext](#projektidee-und-kontext)
+  - [Recherche](#recherche)
+  - [Einrichtung der Hardware](#einrichtung-der-hardware)
+  - [Einrichtung der Entwicklungsumgebung](#einrichtung-der-entwicklungsumgebung)
+  - [Implementation](#implementation)
+    - [HomeKit Bridge Server](#homekit-bridge-server)
+    - [WrappedAccessory](#wrappedaccessory)
+    - [WrappedSensor](#wrappedsensor)
+    - [AQI-Algorithmus](#aqi-algorithmus)
+    - [Service Erstellung](#service-erstellung)
+  - [Fazit](#fazit)
+  - [Ausblick](#ausblick)
+  - [Quellen](#quellen)
 
 ## Projektidee und Kontext
 
@@ -34,7 +33,7 @@ Die Aufgabenstellung an mich selbst war also:
 Ich hatte nun also eine Idee und ein Ziel, aber absolut keine Ahnung wie ich dieses verwirklichen wollte, bzw. konnte. Fest stand im Prinzip nur, dass mein Raspberry Pi zum Einsatz kommen sollte. Als allererstes brauchte ich einen Sensor, wobei ich mich für den [BME680 von Bosch](https://www.berrybase.de/bme680-breakout-board-4in1-sensor-fuer-temperatur-luftfeuchtigkeit-luftdruck-und-luftguete) entschied. Zu diesem schien Einiges an Dokumentation zu existieren, und - für mich noch wichtiger - Code-Beispiele und Libraries in Python anstatt nur in C.
 Ich fand zwei Libraries die speziell für den BME680 geschrieben waren, einmal eine von [pimoroni](https://github.com/pimoroni/bme680-python) und einmal von [adafruit](https://github.com/adafruit/Adafruit_CircuitPython_BME680). Ausprobiert habe ich beide, entschied mich aber schlussendlich für die von pimoroni, da diese bessere Code-Beispiele beinhaltete, wie zum Beispiel einen Algorithmus zur Berechnung der Luftqualität auf den ich später noch eingehen werde.
 Die Kommunikation mit dem Sensor an sich war also klar, und damit auch die Programmiersprache, nämlich Python (weshalb ich zugegebenermaßen sehr erleichtert war, denn ich hatte wenig Lust mich in C einarbeiten zu müssen). Benutzt habe ich Python 3.10.7, diese Version war zum Zeitpunkt des Projektstarts die aktuellste Version.
-Bei der Installation von Python und den benötigten Libraries gab es einige Probleme, siehe [[semesters/22-wise/iot/bme680-homekit-accessory/README#Einrichtung des Raspberry Pi|Einrichtung des Raspberry Pi]].
+Bei der Installation von Python und den benötigten Libraries gab es einige Probleme, siehe [Einrichtung der Entwicklungsumgebung](#einrichtung-der-entwicklungsumgebung).
 Mir fehlte also nur noch eine Library um mit der Home-App zu kommunizieren. Auch hier ergab eine Google-Suche mehrere mögliche Kandidaten, in die engere Auswahl nahm ich aber nur [HAP-python](https://github.com/ikalchev/HAP-python) (hierbei steht HAP für [_HomeKit Accessory Protocol_](https://developer.apple.com/apple-home/)) und [homekit_python](https://github.com/jlusiardi/homekit_python). Nach ein bisschen durch die jeweiligen Dokumentationen graben, entschied ich mich für HAP-python, da es mir logischer strukturiert und "polierter" erschien. Außerdem wird homekit_python nicht aktiv weiterentwickelt und betreut:
 
 > Due to lack of time I (@jlusiardi) will not put much time into this project in the foreseeable future.
@@ -62,13 +61,13 @@ Als ersten Schritt der Durchführungsphase musste ich natürlich die Hardware ei
 -   4x Male-to-Female Jumper/Dupont Kabel (z.B. wie [hier auf BerryBase](https://www.berrybase.de/40pin-jumper/dupont-kabel-male-female-trennbar))
 -   USB-C Netzkabel
 
-![[bme680_project_1.jpeg]]
+![bme680_project_1](resources/bme680_project_1.jpeg)
 \- Bild #1, Bosch BME680 Sensor als Breakout-Board von BerryBase
 
 Zuerst ließ ich mir von meinen Mitbewohner erklären, wie ich die mitgelieferte Pin-Leiste (sichtbar rechts in Bild #1) an den Sensor löte. Da ich vorher noch nie selber gelötet hatte, stellte das meine Nerven ziemlich auf die Probe, es hat aber alles funktioniert.
 Nach dem Löten und dem Anschließen der Jumper-Kabel sah das Ganze dann so aus:
 
-![[bme680_project_3.jpeg]]
+![bme680_project_3](resources/bme680_project_3.jpeg)
 \- Bild #2, BME680 Sensor mit angelöteter Pin-Leiste und daran angeschlossenen Jumper-Kabeln.
 
 Da ich das I2C-Interface benutzen wollte, musste ich nur vier der sechs Pins an den Sensor anschließen. Wie in Bild #2 zu sehen, die beiden oberen Pins sind unbenutzt. Das sind die Pins `SC0` und `CS` (Bild #1).
@@ -121,7 +120,7 @@ Eine bessere Visualisierung ist aber dieses Bild:
 
 Laut den Anweisungen von [Laub-Home](https://www.laub-home.de/wiki/Raspberry_Pi_BME680_Gas_Sensor#Anschluss_des_Sensors_am_GPIO) sollte ich die Pins 1 (3v3 Strom), 3 (SDA), 5 (SCL) und 6 (Ground) benutzen. Dies stellte allerdings ein Problem dar, da ich an meinem Raspberry Pi einen kleinen Lüfter betreibe, der sich je nach Last zuschaltet um den Prozessor kühl zu halten. Dieser blockierte die vom Sensor benötigten Pins:
 
-![[bme680_project_2.jpeg]]
+![bme680_project_2](resources/bme680_project_2.jpeg)
 \- Bild #4, Raspberry Pi GPIO-Pinleiste, wobei Pin 1, 3, 5 und 6 markiert sind
 
 Es stellte sich heraus, dass der Raspberry Pi zwei verschiedene I2C-Interfaces hat, das Primäre wie erwähnt an Pin 3 und 5 und das Zweite an Pin 27 und 28. Also schloss ich den Sensor zunächst einmal an Pin 27 und 28 an, da diese Pins nicht vom Lüfter blockiert wurden.
@@ -398,7 +397,7 @@ Or enter this code in your HomeKit app on your iOS device: 559-25-115
 
 Wenn man den erwähnten QR-Code scannt, öffnet sich die Home-App und fragt einen, ob man die "RaspiBridge" hinzufügen möchte. Dann muss man sich durch ein kurzes Setup klicken und den Sensor einem Raum zuweisen. Nach dem Setup sieht das Ganze dann so aus:
 
-![[bem680_project_home_app_screenshot.png]]
+![bem680_project_home_app_screenshot](resources/bem680_project_home_app_screenshot.png)
 \- Bild #5, Screenshot aus der Home-App nachdem der Sensor eingerichtet wurde
 
 An dieser Stelle möchte ich auf die `accessory.state` Datei eingehen, die HAP-python für Persistenz verwendet. Sobald `start()` auf einem `AccessoryDriver` aufgerufen wird, liest dieser (falls vorhanden) die `accessory.state` Datei aus oder erstellt diese, falls sie nicht existiert. Diese Datei ist eine relativ simple JSON-Datei, in der einige Metadaten gespeichert werden, damit man nicht bei jedem Start des `AccessoryDriver` den Pairing-Prozess neu durchführen muss. Die von meinem Pi gespeicherte Datei sieht zum Beispiel so aus:

@@ -2,21 +2,21 @@
 
 ## Inhaltsverzeichnis
 
-- [Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit](#nutzung-eines-bme680-sensors-an-einem-raspberry-pi-als-luftqualitätssensor-in-homekit)
-  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
-  - [Projektidee und Kontext](#projektidee-und-kontext)
-  - [Recherche](#recherche)
-  - [Einrichtung der Hardware](#einrichtung-der-hardware)
-  - [Einrichtung der Entwicklungsumgebung](#einrichtung-der-entwicklungsumgebung)
-  - [Implementation](#implementation)
-    - [HomeKit Bridge Server](#homekit-bridge-server)
-    - [WrappedAccessory](#wrappedaccessory)
-    - [WrappedSensor](#wrappedsensor)
-    - [AQI-Algorithmus](#aqi-algorithmus)
-    - [Service Erstellung](#service-erstellung)
-  - [Fazit](#fazit)
-  - [Ausblick](#ausblick)
-  - [Quellen](#quellen)
+-   [Nutzung eines BME680 Sensors an einem Raspberry Pi als Luftqualitätssensor in HomeKit](#nutzung-eines-bme680-sensors-an-einem-raspberry-pi-als-luftqualitätssensor-in-homekit)
+    -   [Inhaltsverzeichnis](#inhaltsverzeichnis)
+    -   [Projektidee und Kontext](#projektidee-und-kontext)
+    -   [Recherche](#recherche)
+    -   [Einrichtung der Hardware](#einrichtung-der-hardware)
+    -   [Einrichtung der Entwicklungsumgebung](#einrichtung-der-entwicklungsumgebung)
+    -   [Implementation](#implementation)
+        -   [HomeKit Bridge Server](#homekit-bridge-server)
+        -   [WrappedAccessory](#wrappedaccessory)
+        -   [WrappedSensor](#wrappedsensor)
+        -   [AQI-Algorithmus](#aqi-algorithmus)
+        -   [Service Erstellung](#service-erstellung)
+    -   [Fazit](#fazit)
+    -   [Ausblick](#ausblick)
+    -   [Quellen](#quellen)
 
 ## Projektidee und Kontext
 
